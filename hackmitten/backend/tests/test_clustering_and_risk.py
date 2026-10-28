@@ -94,3 +94,81 @@ def test_risk_scoring():
     assert score_low < 35.0
     assert level_low == "LOW"
     assert is_spike_low is False
+
+def test_explanation_and_recommended_fix():
+    from app.engine.clustering import generate_explanation_and_fix
+
+    # Test Vercel 503 Persistent Storage error
+    exp, fix = generate_explanation_and_fix(
+        category="Database",
+        error_type="StorageNotConfiguredError",
+        message="HTTP 503: Persistent storage is not configured. Add the Upstash Redis environment variables in Vercel."
+    )
+    assert "Persistent storage is unconfigured" in exp
+    assert "UPSTASH_REDIS" in fix
+
+    # Test OOM
+    exp_oom, fix_oom = generate_explanation_and_fix(
+        category="Memory",
+        error_type="OutOfMemoryError",
+        message="Fatal JavaScript out of memory"
+    )
+    assert "heap memory" in exp_oom.lower()
+    assert "LRU" in fix_oom
+
+def test_reset_and_triage_api():
+    from fastapi.testclient import TestClient
+    from app.main import app
+
+    client = TestClient(app)
+
+    # 1. Test Reset API returns all values to 0
+    res = client.post("/api/reset")
+    assert res.status_code == 200
+    assert res.json()["ok"] is True
+
+    # Check stats after reset
+    stats = client.get("/api/stats").json()
+    assert stats["totalCrashes"] == 0
+    assert stats["activeClusters"] == 0
+    assert stats["thresholdReached"] is False
+    assert stats["targetUrl"] == "https://crashweb-gules.vercel.app"
+
+    # 2. Simulate ingesting 500 crashes
+    for i in range(500):
+        c_type = "StorageNotConfiguredError" if i % 2 == 0 else "DatabaseConnectionError"
+        res = client.post(
+            "/api/crashes",
+            headers={"X-Project-Key": "key_live_crashweb_2026"},
+            json={
+                "projectId": "proj_crashweb_01",
+                "errorType": c_type,
+                "message": f"Failure event {i % 5} on catalog",
+                "url": "https://crashweb-gules.vercel.app/api/engine",
+                "httpStatus": 503,
+                "severityHint": "critical",
+                "sessionId": f"sess_{i % 10}"
+            }
+        )
+        assert res.status_code == 201
+
+    # Verify threshold reached and top 5 triage
+    stats_after = client.get("/api/stats").json()
+    assert stats_after["totalCrashes"] >= 500
+    assert stats_after["thresholdReached"] is True
+    assert len(stats_after["top5HighRisks"]) <= 5
+    for r in stats_after["top5HighRisks"]:
+        assert "rank" in r
+        assert "suggested_fix" in r
+        assert len(r["suggested_fix"]) > 0
+
+    # Test top5-triage endpoint
+    triage = client.get("/api/clusters/top5-triage").json()
+    assert triage["thresholdReached"] is True
+    assert len(triage["top5"]) <= 5
+
+    # Reset again
+    res_clean = client.post("/api/reset")
+    assert res_clean.status_code == 200
+    stats_clean = client.get("/api/stats").json()
+    assert stats_clean["totalCrashes"] == 0

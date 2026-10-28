@@ -57,7 +57,10 @@ const MAX_REPORTS_PER_WINDOW = 25;
 const RATE_WINDOW_MS = 5000;
 const seenFingerprints = new Map<string, number>();
 
-function isRateLimited(message: string, url: string): boolean {
+function isRateLimited(message: string, url: string, isAttackOrBot?: boolean): boolean {
+  if (isAttackOrBot) {
+    return false;
+  }
   const now = Date.now();
   if (now - lastResetTime > RATE_WINDOW_MS) {
     recentReportsCount = 0;
@@ -149,7 +152,8 @@ export async function sendCrashReport(
       return false;
     }
 
-    if (isRateLimited(message, currentUrl)) {
+    const isAttackOrBot = Boolean(payload.botId || payload.metadata?.isAttack || typeof window === 'undefined');
+    if (isRateLimited(message, currentUrl, isAttackOrBot)) {
       return false;
     }
 

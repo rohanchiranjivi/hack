@@ -15,23 +15,33 @@ export async function POST(req: NextRequest) {
 
     if (action === 'start') {
       const stats = botManager.start({
-        targetUrl: body.targetUrl || 'http://localhost:3000',
-        botCount: typeof body.botCount === 'number' ? body.botCount : 3,
-        intervalMs: typeof body.intervalMs === 'number' ? body.intervalMs : 1500,
-        mode: body.mode || 'random',
-        targetedScenario: body.targetedScenario || 'be-db-pool-exhausted',
+        targetUrl: body.targetUrl || process.env.TARGET_URL || 'https://crashweb-gules.vercel.app',
+        botCount: typeof body.botCount === 'number' ? body.botCount : 4,
+        intervalMs: typeof body.intervalMs === 'number' ? body.intervalMs : 600,
+        mode: body.mode || 'stress',
+        targetedScenario: body.targetedScenario || 'be-storage-503',
       });
-      return NextResponse.json({ ok: true, stats, message: 'Bots started.' });
+      return NextResponse.json({ ok: true, stats, message: 'Attack fleet started.' });
     }
 
     if (action === 'stop') {
       const stats = botManager.stop();
-      return NextResponse.json({ ok: true, stats, message: 'Bots stopped.' });
+      return NextResponse.json({ ok: true, stats, message: 'Attack fleet stopped.' });
     }
 
-    return NextResponse.json({ error: 'Invalid action. Use start or stop.' }, { status: 400 });
+    if (action === 'flood500') {
+      // Asynchronously trigger rapid flood to 500 crashes
+      const targetCount = typeof body.count === 'number' ? body.count : 500;
+      botManager.triggerFlood500(targetCount);
+      return NextResponse.json({
+        ok: true,
+        message: `Rapid flood attack wave (${targetCount} crashes) launched against victim site.`,
+        stats: botManager.getStats(),
+      });
+    }
+
+    return NextResponse.json({ error: 'Invalid action. Use start, stop, or flood500.' }, { status: 400 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-

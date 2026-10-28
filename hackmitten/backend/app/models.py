@@ -1,5 +1,5 @@
 """Canonical data contracts shared by loaders and API clients."""
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal
 from pydantic import BaseModel, Field
 
@@ -64,7 +64,7 @@ RiskLevel = Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"]
 
 class CrashReport(BaseModel):
     projectId: str = Field(..., description="Target project identifier")
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     errorType: str = Field(..., description="Exception or error type")
     message: str = Field(..., description="Human-readable crash message")
     stackTrace: str = Field(default="", description="Stack trace if available")

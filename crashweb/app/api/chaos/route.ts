@@ -21,13 +21,34 @@ export async function POST(req: NextRequest) {
 
 async function handleChaos(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const scenario = searchParams.get('scenario') || 'be-http-500';
+  const scenario = searchParams.get('scenario') || 'be-storage-503';
   const botId = searchParams.get('botId') || req.headers.get('x-bot-id') || undefined;
   const sessionId = searchParams.get('sessionId') || req.headers.get('x-session-id') || undefined;
 
-  const url = req.url;
+  const targetBase = (process.env.TARGET_URL || 'https://crashweb-gules.vercel.app').replace(/\/+$/, '');
 
   switch (scenario) {
+    case 'be-storage-503': {
+      const errMessage = 'HTTP 503: Persistent storage is not configured. Add the Upstash Redis environment variables in Vercel.';
+      const stack = `StorageNotConfiguredError: ${errMessage}\n    at getRedisClient (lib/backend.ts:32:11)\n    at handleEngine (app/api/engine/route.ts:58:24)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)`;
+
+      await sendCrashReport({
+        errorType: 'StorageNotConfiguredError',
+        message: errMessage,
+        stackTrace: stack,
+        url: `${targetBase}/api/engine`,
+        httpStatus: 503,
+        botId,
+        sessionId,
+        severityHint: 'critical',
+      });
+
+      return NextResponse.json(
+        { error: errMessage, code: 'STORAGE_NOT_CONFIGURED', scenario },
+        { status: 503 }
+      );
+    }
+
     case 'be-http-500': {
       const errMessage = 'Internal Server Error: Database transaction deadlock detected on Zon inventory commit.';
       const stack = `Error: ${errMessage}\n    at InventoryManager.commitStock (src/inventory/stock.ts:182:19)\n    at OrderEngine.processOrder (src/engine/processor.ts:94:12)\n    at handleChaos (/api/chaos/route.ts:42:15)`;
@@ -36,7 +57,7 @@ async function handleChaos(req: NextRequest) {
         errorType: 'InternalServerError',
         message: errMessage,
         stackTrace: stack,
-        url: '/api/chaos?scenario=be-http-500',
+        url: `${targetBase}/api/checkout`,
         httpStatus: 500,
         botId,
         sessionId,
@@ -57,7 +78,7 @@ async function handleChaos(req: NextRequest) {
         errorType: 'DatabaseConnectionError',
         message: errMessage,
         stackTrace: stack,
-        url: '/api/chaos?scenario=be-db-pool-exhausted',
+        url: `${targetBase}/api/checkout`,
         httpStatus: 503,
         botId,
         sessionId,
@@ -71,18 +92,18 @@ async function handleChaos(req: NextRequest) {
     }
 
     case 'be-timeout': {
-      // Simulate hanging server that exceeds client timeout
-      await new Promise((resolve) => setTimeout(resolve, 4500));
+      const errMessage = 'Gateway Timeout: Upstream catalog service failed to respond within SLA window (504).';
+      const stack = `GatewayTimeout: Upstream SLA exceeded\n    at HttpClient.fetchWithTimeout (src/lib/fetcher.ts:42:19)\n    at CatalogService.getSnapshot (src/catalog/service.ts:112:8)`;
 
-      const errMessage = 'Gateway Timeout: Upstream catalog service failed to respond within SLA window.';
       await sendCrashReport({
         errorType: 'GatewayTimeout',
         message: errMessage,
-        url: '/api/chaos?scenario=be-timeout',
+        stackTrace: stack,
+        url: `${targetBase}/api/engine`,
         httpStatus: 504,
         botId,
         sessionId,
-        severityHint: 'high',
+        severityHint: 'critical',
       });
 
       return NextResponse.json(
@@ -99,7 +120,7 @@ async function handleChaos(req: NextRequest) {
         errorType: 'TypeError',
         message: errMessage,
         stackTrace: stack,
-        url: '/api/chaos?scenario=be-null-pointer',
+        url: `${targetBase}/api/auth/verify`,
         httpStatus: 500,
         botId,
         sessionId,
@@ -120,7 +141,7 @@ async function handleChaos(req: NextRequest) {
         errorType: 'UnhandledDomainException',
         message: errMessage,
         stackTrace: stack,
-        url: '/api/chaos?scenario=be-unhandled-exception',
+        url: `${targetBase}/api/checkout/fraud-check`,
         httpStatus: 500,
         botId,
         sessionId,
@@ -134,22 +155,21 @@ async function handleChaos(req: NextRequest) {
     }
 
     case 'be-oom-simulation': {
-      // Allocate simulated server memory pressure
       for (let i = 0; i < 20; i++) {
         serverMemoryStore.push(new Array(50000).fill('server_oom_alloc_' + Math.random()));
       }
       if (serverMemoryStore.length > 200) {
-        serverMemoryStore.splice(0, 100); // keep bounded so process doesn't truly crash host
+        serverMemoryStore.splice(0, 100);
       }
 
-      const errMessage = 'OutOfMemoryError: JavaScript heap out of memory or approaching limit (Simulated)';
+      const errMessage = 'OutOfMemoryError: JavaScript heap out of memory in Vercel Edge compute (Heap Limit: 512 MB)';
       const stack = `OutOfMemoryError: ${errMessage}\n    at BufferPool.allocateChunk (src/memory/allocator.ts:31:9)\n    at handleChaos (/api/chaos/route.ts:133:15)`;
 
       await sendCrashReport({
         errorType: 'OutOfMemoryError',
         message: errMessage,
         stackTrace: stack,
-        url: '/api/chaos?scenario=be-oom-simulation',
+        url: `${targetBase}/api/engine`,
         httpStatus: 500,
         botId,
         sessionId,
@@ -162,21 +182,12 @@ async function handleChaos(req: NextRequest) {
       );
     }
 
-    case 'be-slow-endpoint': {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      return NextResponse.json({
-        ok: true,
-        message: 'Endpoint completed after 3000ms artificial latency delay.',
-        latency: 3000,
-      });
-    }
-
     case 'be-malformed-input': {
       const errMessage = 'BadRequestError: Invalid encoding or malformed JSON payload structure received.';
       await sendCrashReport({
         errorType: 'BadRequestError',
         message: errMessage,
-        url: '/api/chaos?scenario=be-malformed-input',
+        url: `${targetBase}/api/engine`,
         httpStatus: 400,
         botId,
         sessionId,
@@ -189,31 +200,12 @@ async function handleChaos(req: NextRequest) {
       );
     }
 
-    // Network Scenarios
-    case 'net-4xx': {
-      const errMessage = 'HTTP 404: The requested resource /api/v1/user/payment-methods was not found.';
-      await sendCrashReport({
-        errorType: 'HTTP_404',
-        message: errMessage,
-        url: '/api/chaos?scenario=net-4xx',
-        httpStatus: 404,
-        botId,
-        sessionId,
-        severityHint: 'medium',
-      });
-
-      return NextResponse.json(
-        { error: errMessage, code: 'NOT_FOUND' },
-        { status: 404 }
-      );
-    }
-
     case 'net-5xx': {
       const errMessage = 'HTTP 502 Bad Gateway: Downstream order service upstream proxy returned invalid response.';
       await sendCrashReport({
         errorType: 'HTTP_502',
         message: errMessage,
-        url: '/api/chaos?scenario=net-5xx',
+        url: `${targetBase}/api/engine`,
         httpStatus: 502,
         botId,
         sessionId,
@@ -226,16 +218,6 @@ async function handleChaos(req: NextRequest) {
       );
     }
 
-    case 'net-cors': {
-      const response = NextResponse.json(
-        { error: 'CORS header mismatch: Origin not allowed.' },
-        { status: 403 }
-      );
-      // Explicitly reject origin
-      response.headers.set('Access-Control-Allow-Origin', 'null');
-      return response;
-    }
-
     case 'net-rate-limit': {
       const now = Date.now();
       if (now - lastReset > 10000) {
@@ -244,11 +226,11 @@ async function handleChaos(req: NextRequest) {
       }
       simulatedRequestCount++;
 
-      const errMessage = 'HTTP 429 Too Many Requests: Rate limit exceeded (Threshold: 5 req/10s).';
+      const errMessage = 'HTTP 429 Too Many Requests: Rate limit exceeded (Threshold: 250 req/sec from bot fleet).';
       await sendCrashReport({
         errorType: 'HTTP_429',
         message: errMessage,
-        url: '/api/chaos?scenario=net-rate-limit',
+        url: `${targetBase}/`,
         httpStatus: 429,
         botId,
         sessionId,
@@ -271,4 +253,3 @@ async function handleChaos(req: NextRequest) {
       );
   }
 }
-

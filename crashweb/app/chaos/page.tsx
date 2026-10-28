@@ -57,6 +57,25 @@ export default function ChaosControlPanel() {
     setTimeout(() => setToast(null), 3500);
   }
 
+  async function triggerFlood500() {
+    try {
+      showToast('Launching 500-crash rapid flood attack against victim site...', 'info');
+      const res = await fetch('/api/bots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'flood500', count: 500 }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('⚡ 500-crash wave in progress! Check Dashboard for Top 5 triage.', 'success');
+      } else {
+        showToast('Flood failed: ' + data.error, 'error');
+      }
+    } catch (e: any) {
+      showToast('Failed to trigger flood: ' + e.message, 'error');
+    }
+  }
+
   async function toggleBots() {
     const action = botStats.isRunning ? 'stop' : 'start';
     try {
@@ -145,30 +164,33 @@ export default function ChaosControlPanel() {
       {/* Top Navigation */}
       <header className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-8 border-b border-slate-800">
         <div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href="https://crashweb-gules.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-lg bg-indigo-950/80 border border-indigo-700/60 text-indigo-300 hover:text-white hover:bg-indigo-900 transition"
             >
-              <ArrowLeft className="w-3.5 h-3.5" /> Zon Storefront
-            </Link>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-mono">
-              TARGET TEST SITE (VICTIM)
+              Victim Storefront: https://crashweb-gules.vercel.app/
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-mono font-bold">
+              STANDALONE ATTACK SERVER
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mt-2 flex items-center gap-3">
             <Flame className="w-7 h-7 text-rose-500 animate-pulse" />
-            Crash Control Panel
+            Crash Control Attack Center
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Simulate realistic failures, control automated traffic bots, and verify real-time error clustering.
+            Simulate realistic failure attacks against the victim website, control autonomous bot fleet, and generate incident floods for triage.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-2 text-xs">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="text-slate-300 font-mono">Reporter SDK: Active</span>
+            <span className="text-slate-300 font-mono">Attack Fleet: Ready</span>
           </div>
 
           <a
@@ -190,18 +212,18 @@ export default function ChaosControlPanel() {
             <div>
               <div className="flex items-center gap-2.5 text-indigo-400 font-mono text-xs uppercase tracking-wider font-semibold">
                 <Bot className="w-4 h-4" />
-                Automated Bot Fleet Orchestrator
+                Autonomous Bot Fleet & Flood Attacker
               </div>
               <h2 className="text-xl font-bold text-white mt-1">
-                Autonomous Traffic & Chaos Generator
+                Crash Control Attack Engine
               </h2>
               <p className="text-slate-400 text-xs mt-0.5">
-                Spawns concurrent bots that browse products, submit carts, and trip realistic failure points.
+                Launches concurrent HTTP attack waves against <code className="text-indigo-400 font-mono">https://crashweb-gules.vercel.app/</code>.
               </p>
             </div>
 
-            {/* Run / Stop Toggle Button */}
-            <div className="flex items-center gap-4">
+            {/* Run / Stop Toggle Button & Flood 500 Button */}
+            <div className="flex flex-wrap items-center gap-4">
               <div className="text-right">
                 <div className="text-xs text-slate-400">Fleet Status</div>
                 <div
@@ -214,6 +236,19 @@ export default function ChaosControlPanel() {
                     : 'STOPPED / IDLE'}
                 </div>
               </div>
+
+              {/* 500 Flood Attack Button */}
+              <button
+                onClick={triggerFlood500}
+                disabled={botStats.isFlooding}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm tracking-wide bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white shadow-xl shadow-rose-600/20 transition-all cursor-pointer disabled:opacity-50"
+                title="Rapidly fire 500 attack crashes at the victim site to activate dashboard triage mode"
+              >
+                <Zap className="w-4 h-4 fill-white animate-bounce" />
+                {botStats.isFlooding
+                  ? `ATTACKING (${botStats.floodProgress || 0}/500)...`
+                  : '⚡ ATTACK TO 500 CRASHES'}
+              </button>
 
               <button
                 onClick={toggleBots}

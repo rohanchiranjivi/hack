@@ -28,10 +28,10 @@ const npmCmd = isWin ? 'npm.cmd' : 'npm';
 console.log('\x1b[36m%s\x1b[0m', '===============================================================');
 console.log('\x1b[1m\x1b[33m   LAUNCHING CRASH MONITORING END-TO-END DEMO ECOSYSTEM        \x1b[0m');
 console.log('\x1b[36m%s\x1b[0m', '===============================================================');
-console.log('  1. Monitoring Backend  : \x1b[32mhttp://localhost:8000\x1b[0m');
-console.log('  2. Monitoring Dashboard: \x1b[32mhttp://localhost:5173\x1b[0m');
-console.log('  3. CrashWeb Test Site  : \x1b[32mhttp://localhost:3000\x1b[0m');
-console.log('  4. Crash Control Panel : \x1b[35mhttp://localhost:3000/chaos\x1b[0m');
+console.log('  1. Monitoring Backend       : \x1b[32mhttp://localhost:8000\x1b[0m (Values reset to 0 on startup/refresh)');
+console.log('  2. Monitoring Dashboard     : \x1b[32mhttp://localhost:5173\x1b[0m (Real-time SSE + 500-Crash Triage Mode)');
+console.log('  3. Monitored Victim Website : \x1b[36mhttps://crashweb-gules.vercel.app/\x1b[0m (Separate Vercel deployment)');
+console.log('  4. Crash Control Server     : \x1b[35mhttp://localhost:3000\x1b[0m (Dedicated Chaos Attack Center)');
 console.log('\x1b[90mPress Ctrl+C to terminate all services.\x1b[0m\n');
 
 const processes = [];

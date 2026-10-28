@@ -112,13 +112,18 @@ def init_db():
             """, (
                 'proj_crashweb_01',
                 'Zon Commerce (CrashWeb Test Site)',
-                'http://localhost:3000',
+                'https://crashweb-gules.vercel.app',
                 'key_live_crashweb_2026',
                 datetime.now(timezone.utc).isoformat(),
                 'Healthy',
                 42.0,
                 100.0
             ))
+        else:
+            cursor.execute("""
+            UPDATE projects SET target_url = 'https://crashweb-gules.vercel.app'
+            WHERE project_id = 'proj_crashweb_01'
+            """)
 
         conn.commit()
         conn.close()
@@ -406,6 +411,14 @@ def reset_database():
         cursor.execute("DELETE FROM crashes")
         cursor.execute("DELETE FROM clusters")
         cursor.execute("DELETE FROM health_checks")
+        cursor.execute("""
+        UPDATE projects SET 
+            health_status = 'Healthy',
+            last_latency_ms = 42.0,
+            uptime_pct = 100.0,
+            target_url = 'https://crashweb-gules.vercel.app'
+        WHERE project_id = 'proj_crashweb_01'
+        """)
         conn.commit()
         conn.close()
 

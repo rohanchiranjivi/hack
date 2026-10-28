@@ -4,7 +4,7 @@ import {
   ExternalLink, Search, RefreshCw, Download, Filter, ArrowUpRight,
   ChevronRight, X, Copy, Check, Eye, Bug, Database, Cpu, Wifi,
   Sliders, Radio, Terminal, Sparkles, Layers, ArrowRight, Sun, Moon,
-  FileSpreadsheet, FileJson
+  FileSpreadsheet, FileJson, RotateCcw, Wrench
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
@@ -30,6 +30,7 @@ export interface Cluster {
   suggested_fix?: string;
   trend_over_time?: Array<{ bucket: number; count: number }>;
   occurrences?: any[];
+  rank?: number;
 }
 
 export interface Stats {
@@ -44,6 +45,9 @@ export interface Stats {
   crashRatePerMin: number;
   sessionsImpacted: number;
   categoryDistribution: Record<string, number>;
+  thresholdReached?: boolean;
+  thresholdLimit?: number;
+  top5HighRisks?: Cluster[];
 }
 
 export const CATEGORY_COLORS: Record<string, string> = {
@@ -75,6 +79,8 @@ export default function CrashMonitorView({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<'risk' | 'count' | 'recent'>('risk');
   const [copied, setCopied] = useState<boolean>(false);
+  const [copiedFixId, setCopiedFixId] = useState<string | null>(null);
+  const [filterTop5Only, setFilterTop5Only] = useState<boolean>(false);
   const [toast, setToast] = useState<{ msg: string; type: 'critical' | 'info' | 'success' } | null>(null);
   const [liveStreamEvents, setLiveStreamEvents] = useState<any[]>([]);
   const [showLiveDrawer, setShowLiveDrawer] = useState<boolean>(false);
@@ -103,6 +109,32 @@ export default function CrashMonitorView({
     }
   };
 
+  const resetToZero = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/reset`, { method: 'POST' });
+      if (res.ok) {
+        setClusters([]);
+        setStats((prev) => prev ? {
+          ...prev,
+          totalCrashes: 0,
+          activeClusters: 0,
+          highRiskCount: 0,
+          crashRatePerMin: 0,
+          sessionsImpacted: 0,
+          categoryDistribution: {},
+          thresholdReached: false,
+          top5HighRisks: [],
+        } : null);
+        setSelectedCluster(null);
+        setLiveStreamEvents([]);
+        setToast({ msg: 'All metrics and crashes returned to zero.', type: 'info' });
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch (e) {
+      console.error('Reset failed:', e);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, [selectedCategory, selectedStatus, sortBy, searchQuery]);
@@ -113,6 +145,23 @@ export default function CrashMonitorView({
     try {
       const streamUrl = `${API_BASE}/stream`;
       eventSource = new EventSource(streamUrl);
+
+      eventSource.addEventListener('reset', () => {
+        setClusters([]);
+        setStats((prev) => prev ? {
+          ...prev,
+          totalCrashes: 0,
+          activeClusters: 0,
+          highRiskCount: 0,
+          crashRatePerMin: 0,
+          sessionsImpacted: 0,
+          categoryDistribution: {},
+          thresholdReached: false,
+          top5HighRisks: [],
+        } : null);
+        setSelectedCluster(null);
+        setLiveStreamEvents([]);
+      });
 
       eventSource.addEventListener('crash', (e) => {
         try {
@@ -251,6 +300,23 @@ export default function CrashMonitorView({
     (c) => (c.risk_level === 'CRITICAL' || c.risk_level === 'HIGH') && c.status === 'active'
   );
 
+  const top5HighRisks: Cluster[] = (stats?.top5HighRisks && stats.top5HighRisks.length > 0)
+    ? stats.top5HighRisks
+    : clusters
+        .filter((c) => c.status === 'active')
+        .sort((a, b) => (b.risk_score - a.risk_score) || (b.count - a.count))
+        .slice(0, 5)
+        .map((c, i) => ({ ...c, rank: i + 1 }));
+
+  const thresholdReached = (stats?.totalCrashes || 0) >= 500 || Boolean(stats?.thresholdReached);
+
+  const copyFixText = (id: string, fixText?: string) => {
+    if (!fixText) return;
+    navigator.clipboard.writeText(fixText);
+    setCopiedFixId(id);
+    setTimeout(() => setCopiedFixId(null), 2500);
+  };
+
   const categoriesList = [
     'All', 'Database', 'JavaScript Runtime', 'Network/HTTP', 'Timeout/Performance',
     'Memory', 'Resource Loading', 'Auth/Permissions', 'Validation/Input'
@@ -290,12 +356,12 @@ export default function CrashMonitorView({
                 Target Victim Site:
               </span>
               <a
-                href={stats?.targetUrl || 'http://localhost:3000'}
+                href={stats?.targetUrl || 'https://crashweb-gules.vercel.app'}
                 target="_blank"
                 rel="noreferrer"
                 className="font-bold text-sm text-indigo-500 hover:underline flex items-center gap-1 font-mono"
               >
-                {stats?.targetUrl || 'http://localhost:3000'}
+                {stats?.targetUrl || 'https://crashweb-gules.vercel.app'}
                 <ExternalLink size={12} />
               </a>
             </div>
@@ -323,6 +389,16 @@ export default function CrashMonitorView({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Reset All to 0 */}
+          <button
+            onClick={resetToZero}
+            className="btn-reset-zero"
+            title="Reset All Monitoring Metrics & Crashes back to 0"
+          >
+            <RotateCcw size={13} />
+            <span>Reset to 0</span>
+          </button>
+
           {/* Live Feed Toggle */}
           <button
             onClick={() => setShowLiveDrawer(!showLiveDrawer)}
@@ -383,6 +459,56 @@ export default function CrashMonitorView({
         </div>
       </section>
 
+      {/* 500+ CRASHES THRESHOLD TRIAGE ALERT BANNER */}
+      {thresholdReached && (
+        <section className="threshold-alert-banner">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start md:items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-400 shrink-0">
+                <ShieldAlert size={28} className="animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-mono font-bold text-[10px] tracking-wider uppercase shadow">
+                    Threshold Active (500+ Alerts)
+                  </span>
+                  <h3 className="text-base font-extrabold text-slate-100">
+                    Automated High-Risk Triage Engaged · {stats?.totalCrashes?.toLocaleString()} Total Crashes
+                  </h3>
+                </div>
+                <p className="text-xs text-rose-200/90 mt-1">
+                  Threshold reached. Background noise suppressed. Categorizing <b>ONLY the Top 5 High-Risk Failures</b> with prioritized remediation fixes below.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setFilterTop5Only(false)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-mono transition ${
+                  !filterTop5Only
+                    ? 'bg-slate-800 text-slate-200 border border-slate-700 shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                All Clusters ({clusters.length})
+              </button>
+              <button
+                onClick={() => setFilterTop5Only(true)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-mono transition flex items-center gap-1.5 ${
+                  filterTop5Only
+                    ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30'
+                    : 'bg-rose-950/70 text-rose-300 border border-rose-800/60 hover:bg-rose-900/60'
+                }`}
+              >
+                <Flame size={13} className="text-amber-300" />
+                <span>Top 5 High Risks Only</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* QUICK METRICS GRID */}
       <section className="cm-metrics-grid">
         <div className="cm-card">
@@ -407,7 +533,7 @@ export default function CrashMonitorView({
             {stats?.highRiskCount || 0}
           </div>
           <div className="cm-card-sub text-rose-400 font-semibold">
-            Require immediate attention
+            {thresholdReached ? 'Triaged to Top 5 high-risk categories' : 'Require immediate attention'}
           </div>
         </div>
 
@@ -476,67 +602,128 @@ export default function CrashMonitorView({
         </section>
       )}
 
-      {/* HIGH-RISK ERRORS SPOTLIGHT (AUTO-FLAGGED AT TOP) */}
-      {highRiskClusters.length > 0 && (
-        <section className="high-risk-section">
+      {/* TOP 5 HIGH-RISK INCIDENTS & RECOMMENDED FIXES */}
+      {top5HighRisks.length > 0 && (
+        <section className="high-risk-section mb-8">
           <div className="high-risk-header">
-            <div className="high-risk-title">
-              <Flame size={20} className="text-rose-500 animate-pulse" />
-              <span>HIGH-RISK ERRORS (CRITICAL & HIGH SEVERITY)</span>
+            <div className="high-risk-title flex items-center gap-2">
+              <Flame size={22} className="text-rose-500 animate-pulse" />
+              <span className="tracking-wide">
+                {thresholdReached ? 'TOP 5 HIGH-RISK FAILURES & RECOMMENDED FIXES (TRIAGED)' : 'HIGH-RISK ERRORS & RECOMMENDED FIXES'}
+              </span>
             </div>
             <span className="risk-pill critical">
-              {highRiskClusters.length} ALERT{highRiskClusters.length > 1 ? 'S' : ''} ACTIVE
+              {top5HighRisks.length} CRITICAL / HIGH ACTIVE
             </span>
           </div>
 
-          <div className="high-risk-list">
-            {highRiskClusters.map((cluster) => (
+          <div className="space-y-4">
+            {top5HighRisks.map((cluster, index) => (
               <div
                 key={cluster.id}
-                onClick={() => openClusterDetail(cluster)}
-                className="high-risk-card"
+                className="triage-top5-card"
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                {/* Header row with Rank, Category, and Counts */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-2 border-b border-white/5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="triage-rank-badge">
+                      #{index + 1} HIGHEST RISK
+                    </span>
                     <span className={`risk-pill ${cluster.risk_level.toLowerCase()}`}>
-                      {cluster.risk_level} · {cluster.risk_score}
+                      {cluster.risk_level} · {cluster.risk_score}/100
                     </span>
                     <span
-                      className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-mono"
+                      className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-mono"
                       style={{
-                        backgroundColor: `${CATEGORY_COLORS[cluster.category]}18`,
+                        backgroundColor: `${CATEGORY_COLORS[cluster.category]}20`,
                         color: CATEGORY_COLORS[cluster.category],
-                        border: `1px solid ${CATEGORY_COLORS[cluster.category]}40`,
+                        border: `1px solid ${CATEGORY_COLORS[cluster.category]}50`,
                       }}
                     >
-                      {cluster.category}
+                      Category: {cluster.category}
                     </span>
                     {cluster.is_spike && (
-                      <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] font-bold font-mono animate-pulse">
+                      <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold font-mono animate-pulse">
                         SPIKE DETECTED (5x)
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-500 font-mono">
+                  <div className="flex items-center gap-4 text-xs text-slate-400 font-mono">
                     <span><b>{cluster.count}</b> occurrences</span>
+                    <span><b>{cluster.affected_sessions?.length || 1}</b> sessions</span>
                     <span>Last: {new Date(cluster.last_seen).toLocaleTimeString()}</span>
                   </div>
                 </div>
 
-                <div className="font-bold text-sm text-slate-100 flex items-center justify-between">
-                  <span>{cluster.title}</span>
-                  <ChevronRight size={16} className="text-slate-400" />
+                {/* Title & Endpoint */}
+                <div className="mt-2.5">
+                  <h4
+                    onClick={() => openClusterDetail(cluster)}
+                    className="font-bold text-base text-slate-100 hover:text-indigo-400 cursor-pointer flex items-center justify-between"
+                  >
+                    <span>{cluster.title}</span>
+                    <ChevronRight size={16} className="text-slate-400" />
+                  </h4>
+                  {cluster.affected_endpoints && cluster.affected_endpoints.length > 0 && (
+                    <div className="text-[11px] text-slate-400 font-mono mt-0.5 flex items-center gap-1.5 flex-wrap">
+                      <span className="text-slate-500">Target Endpoint:</span>
+                      {cluster.affected_endpoints.slice(0, 3).map((ep, i) => (
+                        <span key={i} className="px-1.5 py-0.5 rounded bg-black/40 border border-white/5 text-indigo-300">
+                          {ep}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
+                {/* Plain English Root Cause / Impact */}
                 {cluster.plain_explanation && (
-                  <p className="text-xs text-rose-300/90 font-medium">
-                    <b>Impact:</b> {cluster.plain_explanation}
+                  <p className="text-xs text-rose-300/95 font-medium mt-2 bg-rose-950/20 p-2.5 rounded-lg border border-rose-900/30">
+                    <b>Root Cause / Impact:</b> {cluster.plain_explanation}
                   </p>
                 )}
 
+                {/* Actionable Recommended Fix Box */}
                 {cluster.suggested_fix && (
-                  <div className="text-[11px] text-slate-400 bg-black/20 p-2 rounded border border-white/5 font-mono">
-                    <span className="text-emerald-400 font-semibold">Suggested Fix:</span> {cluster.suggested_fix}
+                  <div className="triage-fix-box">
+                    <div className="triage-fix-header">
+                      <span className="flex items-center gap-1.5 font-bold">
+                        <Wrench size={14} className="text-emerald-400" />
+                        Recommended Production Fix & Mitigation:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => copyFixText(cluster.id, cluster.suggested_fix)}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-300 text-[10px] font-mono border border-emerald-700/50 transition cursor-pointer"
+                        >
+                          {copiedFixId === cluster.id ? (
+                            <>
+                              <Check size={11} className="text-emerald-400" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={11} />
+                              <span>Copy Fix</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => updateStatus(cluster.id, 'resolved')}
+                          className="px-2 py-0.5 rounded bg-indigo-950 hover:bg-indigo-900 text-indigo-300 text-[10px] font-mono border border-indigo-700/50 transition cursor-pointer"
+                        >
+                          Mark Resolved
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs text-slate-300 font-mono">
+                      {cluster.suggested_fix.split('\n').map((line, lIdx) => (
+                        <div key={lIdx} className="leading-relaxed">
+                          {line}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -591,13 +778,24 @@ export default function CrashMonitorView({
           </div>
         </div>
 
-        {/* Category Pills */}
+        {/* Category & Triage Pills */}
         <div className="cm-filters">
+          <button
+            onClick={() => setFilterTop5Only(!filterTop5Only)}
+            className={`cm-filter-pill ${filterTop5Only ? 'active' : ''}`}
+            style={filterTop5Only ? { backgroundColor: '#f43f5e', color: '#fff', borderColor: '#f43f5e' } : {}}
+            title="Categorize only the top 5 high-risk incidents"
+          >
+            ⚡ Top 5 High Risks ({top5HighRisks.length})
+          </button>
           {categoriesList.map((cat) => (
             <button
               key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`cm-filter-pill ${selectedCategory === cat ? 'active' : ''}`}
+              onClick={() => {
+                setFilterTop5Only(false);
+                setSelectedCategory(cat);
+              }}
+              className={`cm-filter-pill ${!filterTop5Only && selectedCategory === cat ? 'active' : ''}`}
             >
               {cat}
             </button>
@@ -612,7 +810,7 @@ export default function CrashMonitorView({
             <RefreshCw className="w-8 h-8 mx-auto animate-spin mb-3 text-indigo-500" />
             Loading crash clusters...
           </div>
-        ) : clusters.length === 0 ? (
+        ) : (filterTop5Only ? top5HighRisks : clusters).length === 0 ? (
           <div className="text-center py-16 bg-slate-900/30 border border-dashed border-slate-800 rounded-2xl">
             <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
             <h3 className="text-lg font-bold text-slate-200">No matching crashes found</h3>
@@ -622,7 +820,7 @@ export default function CrashMonitorView({
           </div>
         ) : (
           <div className="clusters-grid">
-            {clusters.map((cluster) => (
+            {(filterTop5Only ? top5HighRisks : clusters).map((cluster) => (
               <div
                 key={cluster.id}
                 onClick={() => openClusterDetail(cluster)}

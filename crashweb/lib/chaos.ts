@@ -82,6 +82,13 @@ export const CHAOS_SCENARIOS: ChaosScenario[] = [
 
   // Backend
   {
+    id: 'be-storage-503',
+    name: 'Persistent Storage Failure (Vercel 503)',
+    category: 'backend',
+    description: 'Triggers the exact 503 STORAGE_NOT_CONFIGURED failure currently occurring on the Vercel site.',
+    severity: 'critical',
+  },
+  {
     id: 'be-http-500',
     name: 'Backend HTTP 500 Internal Error',
     category: 'backend',

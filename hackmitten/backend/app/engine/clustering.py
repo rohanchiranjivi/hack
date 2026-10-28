@@ -195,10 +195,20 @@ def generate_explanation_and_fix(category: CrashCategory, error_type: str, messa
     lower_msg = message.lower()
 
     if category == "Database":
+        if "storage" in lower_msg or "not configured" in lower_msg or "redis" in lower_msg or "503" in lower_msg:
+            return (
+                "Persistent storage is unconfigured on the Vercel deployment (missing Upstash Redis credentials), causing engine routes to fail with HTTP 503.",
+                "1. In Vercel Project Dashboard (Settings > Environment Variables), configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.\n2. In lib/backend.ts, add an in-memory Map fallback when Redis credentials are not present so the site degrades gracefully.\n3. Redeploy to Vercel and verify POST /api/engine returns 200 OK."
+            )
         if "pool" in lower_msg or "exhausted" in lower_msg:
             return (
                 "Database connection pool capacity was completely saturated under traffic, causing incoming queries to stall and fail.",
-                "Increase max connection pool limit (e.g. from 50 to 150), implement aggressive query timeouts, and ensure client connections are properly released in a finally block."
+                "1. Increase max connection pool limit (e.g. from 50 to 150) in db/connection.ts.\n2. Enforce strict connection lease timeouts (acquireTimeout: 3000ms).\n3. Ensure all query execution blocks release connections in a guaranteed finally { client.release(); } block."
+            )
+        if "deadlock" in lower_msg or "inventory" in lower_msg:
+            return (
+                "Concurrent checkout transactions competed for identical database row locks in conflicting order, triggering a transaction deadlock.",
+                "1. Sort SKU IDs alphabetically before acquiring locks in batch transactions to eliminate circular dependency.\n2. Use SELECT ... FOR UPDATE SKIP LOCKED for high-contention checkout carts.\n3. Wrap inventory updates in an automatic retry loop with exponential jitter."
             )
         return (
             "A database layer operation failed or timed out during transaction execution.",
@@ -207,26 +217,26 @@ def generate_explanation_and_fix(category: CrashCategory, error_type: str, messa
 
     if category == "Memory":
         return (
-            "Memory usage reached dangerous thresholds, risking process crash or severe garbage collection pauses.",
-            "Profile heap allocations for uncleared event listeners, unbounded in-memory caches, or large retained object arrays."
+            "JavaScript heap memory approached or exceeded maximum threshold, risking container termination and GC freeze.",
+            "1. Audit in-memory buffers; replace raw arrays with bounded LRU caches (max: 1000 items).\n2. Ensure unmounted React components and listeners detach event subscribers cleanly.\n3. Increase memory ceiling in container config: NODE_OPTIONS='--max-old-space-size=2048'."
         )
 
     if category == "Timeout/Performance":
         return (
-            "Upstream service or backend endpoint exceeded the maximum allowed latency SLA.",
-            "Add request timeouts on upstream calls, implement circuit breakers, and optimize endpoint database queries."
+            "Upstream microservice or edge compute function exceeded SLA response timeout under concurrent bot load.",
+            "1. Implement circuit breaker pattern (fail-fast after 3 consecutive timeouts).\n2. Add edge caching headers: Cache-Control: s-maxage=60, stale-while-revalidate=300.\n3. Optimize slow queries with composite indexes on foreign keys."
         )
 
     if category == "JavaScript Runtime":
         if "cannot read properties of" in lower_msg or "null" in lower_msg or "undefined" in lower_msg:
             return (
-                "Attempted to access properties of a null or undefined reference in client/server code.",
-                "Add defensive optional chaining (e.g. user?.profile?.preferences) and validate API response payloads before rendering."
+                "Attempted to access properties of a null or undefined reference during client/server hydration.",
+                "1. Implement defensive optional chaining (e.g., product?.price ?? 0.00).\n2. Validate incoming API schema contracts with Zod before passing to React component props.\n3. Wrap high-risk component trees in React Error Boundaries with graceful fallback cards."
             )
         if "unhandled" in lower_msg:
             return (
                 "An asynchronous promise rejected without an attached .catch() error handler.",
-                "Ensure all Promise chains and async/await blocks are wrapped in try/catch or have dedicated .catch() handlers."
+                "1. Ensure all async/await calls are enclosed in try/catch blocks.\n2. Attach global process.on('unhandledRejection') and window.addEventListener('unhandledrejection') handlers.\n3. Propagate rejections to standard HTTP error middleware."
             )
         return (
             "Uncaught runtime exception occurred during execution.",
@@ -234,37 +244,31 @@ def generate_explanation_and_fix(category: CrashCategory, error_type: str, messa
         )
 
     if category == "Network/HTTP":
+        if "429" in lower_msg or "rate limit" in lower_msg:
+            return (
+                "Distributed bot traffic storm overwhelmed endpoint rate quotas, causing mass rejections.",
+                "1. Implement sliding-window rate limiting with Redis Token Bucket at the reverse proxy/WAF.\n2. Return Retry-After HTTP response headers and exponential backoff guidelines to clients.\n3. Apply bot mitigation rules (Cloudflare Bot Management / reCAPTCHA v3) on sensitive endpoints."
+            )
         if "502" in lower_msg or "gateway" in lower_msg:
             return (
                 "Reverse proxy or load balancer received an invalid response from upstream microservices.",
-                "Check upstream container health, verify port bindings, and inspect gateway proxy logs."
-            )
-        if "429" in lower_msg or "rate limit" in lower_msg:
-            return (
-                "Client was throttled after exceeding the allowable request rate.",
-                "Implement client-side request debouncing/throttling and consider raising rate limits for trusted IPs."
+                "1. Inspect upstream service health and restart crashed worker processes.\n2. Verify upstream keep-alive timeouts match proxy gateway timeouts.\n3. Add health check probes with automatic pod recycling in Kubernetes / Docker."
             )
         return (
             "Network communication failed between client and backend service.",
             "Review CORS configuration, check DNS resolution, and verify target endpoint availability."
         )
 
-    if category == "Resource Loading":
-        return (
-            "Static assets (images, stylesheets, or scripts) failed to load from the CDN or server (404/Network).",
-            "Verify asset build paths, verify CDN cache rules, and provide fallback image handlers for missing media."
-        )
-
     if category == "Auth/Permissions":
         return (
-            "User request lacked valid credentials or attempted an unauthorized action.",
-            "Verify session cookie expiration and redirect unauthenticated sessions gracefully to the login screen."
+            "Tampered, forged, or unauthenticated session credentials detected during protected transaction.",
+            "1. Rotate JWT signing secret and enforce strict HMAC-SHA256 signature verification.\n2. Check token expiration (exp), issuer (iss), and audience (aud) claims on every request.\n3. Terminate compromised sessions immediately by revoking tokens in Redis cache."
         )
 
     if category == "Validation/Input":
         return (
-            "Input payload was malformed, unparseable, or failed schema validation constraints.",
-            "Sanitize user inputs on the client before submission and return clear 400 validation error summaries."
+            "Malicious SQL/XSS injection probe or malformed JSON payload detected in query/body input.",
+            "1. Parameterize all SQL queries using prepared statements — never concatenate user input into queries.\n2. Sanitize and escape all user input strings using DOMPurify / validator.js.\n3. Enforce strict request body validation with Pydantic / Zod schemas."
         )
 
     return (

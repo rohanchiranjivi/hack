@@ -45,18 +45,17 @@ DATA.mkdir(parents=True, exist_ok=True)
 
 # In-memory rate limiting per project/IP for POST /api/crashes
 _rate_limits: dict[str, list[float]] = {}
-RATE_LIMIT_MAX = 60  # max 60 crashes per 10 seconds per project
+RATE_LIMIT_MAX = 5000  # High ceiling so 500-crash attack stress tests run uninterrupted
 RATE_LIMIT_WINDOW = 10.0
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Auto-seed initial demo dataset if database is fresh
+    # Every time the backend starts/refreshes, return all values to ZERO
     try:
-        clusters = get_all_clusters()
-        if not clusters:
-            seed_demo_data()
+        reset_database()
+        print("[Init] Backend started: all monitoring values cleanly initialized to 0.")
     except Exception as e:
-        print(f"[Init] Seed check note: {e}")
+        print(f"[Init] Reset error on startup: {e}")
 
     # Launch background health checker
     task = asyncio.create_task(health_check_loop())
@@ -99,7 +98,7 @@ async def process_incoming_crash(crash: CrashReport) -> dict:
         save_project(
             project_id=project_id,
             name=f"Project ({project_id})",
-            target_url="http://localhost:3000",
+            target_url="https://crashweb-gules.vercel.app",
             api_key="key_live_crashweb_2026"
         )
 
@@ -252,13 +251,43 @@ def list_crashes(
     crashes = get_crashes(project_id=projectId, limit=limit, cluster_id=clusterId)
     return crashes
 
+@app.post("/api/reset")
+async def reset_monitoring():
+    """Resets all crashes, clusters, and stats to zero on demand or page reload."""
+    reset_database()
+    _rate_limits.clear()
+    await broadcaster.broadcast("reset", {
+        "status": "reset",
+        "totalCrashes": 0,
+        "activeClusters": 0,
+        "clusters": []
+    })
+    return {"ok": True, "message": "All monitoring data returned to zero."}
+
+@app.get("/api/clusters/top5-triage")
+def get_top5_triage(projectId: str = "proj_crashweb_01"):
+    """Selects and categorizes only the necessary Top 5 High-Risk failure modes and their recommended fixes."""
+    clusters = get_all_clusters(project_id=projectId, status='active')
+    # Sort strictly by risk_score and incident count
+    clusters.sort(key=lambda x: (x.get('risk_score', 0), x.get('count', 0)), reverse=True)
+    top5 = clusters[:5]
+    for idx, c in enumerate(top5):
+        c['rank'] = idx + 1
+        c['trend_over_time'] = [{"bucket": i+1, "count": max(1, c['count']//6)} for i in range(6)]
+    return {
+        "thresholdReached": sum(c['count'] for c in get_all_clusters(project_id=projectId)) >= 500,
+        "count": len(top5),
+        "top5": top5
+    }
+
 @app.get("/api/clusters")
 def list_clusters(
     projectId: str = "proj_crashweb_01",
     status: str | None = None,
     category: str | None = None,
     sort_by: str = "risk",
-    search: str | None = None
+    search: str | None = None,
+    top5_triage: bool = False
 ):
     clusters = get_all_clusters(project_id=projectId, status=status)
 
@@ -286,6 +315,9 @@ def list_clusters(
         clusters.sort(key=lambda x: x['count'], reverse=True)
     elif sort_by == 'recent':
         clusters.sort(key=lambda x: x['last_seen'], reverse=True)
+
+    if top5_triage:
+        return clusters[:5]
 
     return clusters
 
@@ -341,10 +373,21 @@ def get_monitoring_stats(projectId: str = "proj_crashweb_01"):
     for c in clusters:
         all_sessions.update(c.get('affected_sessions', []))
 
+    # Top 5 High-Risk triage calculation (activated when crashes >= 500 or for risk spotlight)
+    active_clusters_list = [c for c in clusters if c.get('status') == 'active']
+    active_clusters_list.sort(key=lambda x: (x.get('risk_score', 0), x.get('count', 0)), reverse=True)
+    top_5_high_risks = []
+    for idx, c in enumerate(active_clusters_list[:5]):
+        c_copy = dict(c)
+        c_copy['rank'] = idx + 1
+        top_5_high_risks.append(c_copy)
+
+    threshold_reached = total_crashes >= 500
+
     return {
         "projectId": projectId,
         "siteStatus": project.get('health_status', 'Healthy') if project else 'Healthy',
-        "targetUrl": project.get('target_url', 'http://localhost:3000') if project else 'http://localhost:3000',
+        "targetUrl": project.get('target_url', 'https://crashweb-gules.vercel.app') if project else 'https://crashweb-gules.vercel.app',
         "uptimePct": project.get('uptime_pct', 100.0) if project else 100.0,
         "lastLatencyMs": project.get('last_latency_ms', 42.0) if project else 42.0,
         "totalCrashes": total_crashes,
@@ -353,6 +396,9 @@ def get_monitoring_stats(projectId: str = "proj_crashweb_01"):
         "crashRatePerMin": crash_rate_per_min,
         "sessionsImpacted": len(all_sessions),
         "categoryDistribution": categories_dist,
+        "thresholdReached": threshold_reached,
+        "thresholdLimit": 500,
+        "top5HighRisks": top_5_high_risks,
     }
 
 @app.get("/api/stream")

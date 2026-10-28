@@ -20,11 +20,8 @@ async def ping_project(project: dict, client: httpx.AsyncClient):
     try:
         # Check target health
         # Prefer /api/engine if crashweb or base url
-        ping_url = target_url
-        if target_url.endswith(':3000') or target_url.endswith(':3000/'):
-            ping_url = target_url.rstrip('/') + '/api/engine'
-
-        resp = await client.get(ping_url, timeout=3.5)
+        ping_url = target_url.rstrip('/')
+        resp = await client.get(ping_url, timeout=5.0, follow_redirects=True)
         latency_ms = (time.time() - start_time) * 1000.0
         status_code = resp.status_code
         is_up = (200 <= status_code < 500)
