@@ -15,6 +15,7 @@ import './data.css';
 import './theme.css';
 import './crash_monitor.css';
 import CrashMonitorView from './CrashMonitorView';
+import LiveSimulationView from './LiveSimulationView';
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
 
@@ -240,7 +241,6 @@ function App() {
     ['Crash Monitor', Flame],
     ['Live simulation', LayoutDashboard],
     ['Tuning backlog', SlidersHorizontal],
-    ['Metrics & evaluation', Activity],
     ['Service map', GitBranch],
     ['Data & Config', Database],
     ['Safety & limitations', Shield],
@@ -355,135 +355,10 @@ function App() {
 
         {/* ORIGINAL VIEWS */}
         {page === 'Live simulation' && (
-          <>
-            <section className="sim-heading">
-              <div>
-                <div className="eyebrow">SIGNALDESK · CUSTOMER IMPACT REPLAY</div>
-                <h1>Replay customer impact.</h1>
-                <p>
-                  Inject a database fault. Watch traffic, failures, and affected sessions move together. An
-                  incident appears only after correlated evidence crosses its threshold.
-                </p>
-              </div>
-              <div className="sim-controls">
-                <button
-                  className="button secondary"
-                  onClick={() => setTrafficRunning(!trafficRunning)}
-                >
-                  {trafficRunning ? <Pause size={15} /> : <Play size={15} />}{' '}
-                  {trafficRunning ? 'Pause traffic' : 'Resume traffic'}
-                </button>
-                <button
-                  className={`button ${overloaded ? 'restore-button' : 'trigger-button'}`}
-                  onClick={() => {
-                    if (!overloaded) {
-                      setTrafficRunning(true);
-                      setOverloaded(true);
-                      setElapsed(0);
-                      setNotice('Synthetic fault injected: primary database connection pool saturation.');
-                    } else {
-                      setOverloaded(false);
-                      setElapsed(0);
-                      setNotice('Synthetic fault cleared. Website recovering.');
-                    }
-                  }}
-                >
-                  {overloaded ? <RotateCcw size={15} /> : <Zap size={15} />}{' '}
-                  {overloaded ? 'Restore website' : 'Trigger database slowdown'}
-                </button>
-              </div>
-            </section>
-
-            <section className="sim-stats">
-              <div className="sim-stat">
-                <span className="stat-icon">
-                  <UsersRound size={16} />
-                </span>
-                <div>
-                  <small>FAKE VISITORS ONLINE</small>
-                  <b>{visitors.toLocaleString()}</b>
-                  <em>simulated users</em>
-                </div>
-                <span className="stat-live">LIVE</span>
-              </div>
-              <div className="sim-stat">
-                <span className="stat-icon">
-                  <Activity size={16} />
-                </span>
-                <div>
-                  <small>REQUESTS / MIN</small>
-                  <b>{rpm.toLocaleString()}</b>
-                  <em>across the storefront</em>
-                </div>
-                <span className="tiny-spark">▂▃▂▅▄▆▅▇</span>
-              </div>
-              <div className="sim-stat">
-                <span className={`stat-icon ${overloaded ? 'red-icon' : ''}`}>
-                  <Clock3 size={16} />
-                </span>
-                <div>
-                  <small>API RESPONSE TIME</small>
-                  <b className={overloaded ? 'bad-number' : ''}>
-                    {Math.round(latency).toLocaleString()}
-                    <i> ms</i>
-                  </b>
-                  <em>baseline · 180 ms</em>
-                </div>
-              </div>
-              <div className="sim-stat">
-                <span className={`stat-icon ${overloaded ? 'red-icon' : ''}`}>
-                  <AlertTriangle size={16} />
-                </span>
-                <div>
-                  <small>FAILED REQUESTS</small>
-                  <b className={overloaded ? 'bad-number' : ''}>
-                    {errorRate.toFixed(1)}
-                    <i>%</i>
-                  </b>
-                  <em>{overloaded ? 'checkout + product API' : 'normal operating range'}</em>
-                </div>
-              </div>
-            </section>
-
-            <section
-              className={
-                incidentDetected
-                  ? 'sim-alert-strip alert-live'
-                  : overloaded
-                  ? 'sim-alert-strip alert-waiting'
-                  : 'sim-alert-strip alert-quiet'
-              }
-            >
-              <span className="alert-strip-icon">
-                {incidentDetected ? (
-                  <AlertTriangle size={16} />
-                ) : overloaded ? (
-                  <Activity size={16} />
-                ) : (
-                  <ShieldCheck size={16} />
-                )}
-              </span>
-              <div>
-                <b>
-                  {incidentDetected
-                    ? 'P1 · Database connection pool saturation'
-                    : overloaded
-                    ? 'Correlating database and website signals'
-                    : 'Monitoring · no incident-level alert'}
-                </b>
-                <small>
-                  {incidentDetected
-                    ? '3 corroborating signals · probable origin db-primary · downstream checkout and gateway impact'
-                    : overloaded
-                    ? 'Waiting for latency and failed requests to cross the incident threshold'
-                    : 'Duplicate health checks and isolated blips remain grouped in the noise tray'}
-                </small>
-              </div>
-              <span className="alert-strip-status">
-                {incidentDetected ? 'LEGITIMATE' : overloaded ? 'INVESTIGATING' : 'WATCHING'}
-              </span>
-            </section>
-          </>
+          <LiveSimulationView
+            darkMode={darkMode}
+            onNavigateToMonitor={() => setPage('Crash Monitor')}
+          />
         )}
 
         {page === 'Data & Config' && (
@@ -598,35 +473,6 @@ function App() {
                   ))}
                 </tbody>
               </table>
-            </div>
-          </>
-        )}
-
-        {page === 'Metrics & evaluation' && (
-          <>
-            <section className="page-heading">
-              <div>
-                <div className="eyebrow">HELD-OUT SYNTHETIC REPLAY</div>
-                <h1>Metrics & evaluation</h1>
-                <p>Computed from the seeded dataset. These are not production performance claims.</p>
-              </div>
-              <button className="button secondary" onClick={load}>
-                <Activity size={15} /> Recompute
-              </button>
-            </section>
-            <div className="metric-grid">
-              {[
-                ['Incident recall', metrics ? `${(metrics.incident_recall * 100).toFixed(1)}%` : '—', 'Known incidents surfaced at P1/P2'],
-                ['Notification reduction', metrics ? `${metrics.notification_reduction_pct}%` : '—', 'Alert threads grouped into situations'],
-                ['Pairwise precision', metrics ? `${(metrics.pairwise_precision * 100).toFixed(1)}%` : '—', 'Alert pairs grouped correctly'],
-                ['Pairwise recall / F1', metrics ? `${(metrics.pairwise_recall * 100).toFixed(1)}% / ${(metrics.pairwise_f1 * 100).toFixed(1)}%` : '—', 'Ground truth incident links'],
-              ].map(([l, v, s]) => (
-                <div className="metric-card" key={l}>
-                  <small>{l}</small>
-                  <strong>{v}</strong>
-                  <span>{s}</span>
-                </div>
-              ))}
             </div>
           </>
         )}

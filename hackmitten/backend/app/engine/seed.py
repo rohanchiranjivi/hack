@@ -99,7 +99,7 @@ SEED_SCENARIOS = [
     },
 ]
 
-def seed_demo_data(project_id: str = "proj_crashweb_01"):
+def seed_demo_data(project_id: str = "proj_crashweb_01", multiplier: int = 1):
     reset_database()
     now = datetime.now(timezone.utc)
 
@@ -115,7 +115,7 @@ def seed_demo_data(project_id: str = "proj_crashweb_01"):
 
         timestamps = []
         # Generate simulated past timestamps
-        count = scen["count"]
+        count = scen["count"] * multiplier
         for i in range(count):
             # Spread over last 20 minutes with clustering toward now
             offset_seconds = (count - i) * 18 + (i % 5) * 3

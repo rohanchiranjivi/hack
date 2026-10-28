@@ -85,8 +85,6 @@ export default function CrashMonitorView({
   const [sortBy, setSortBy] = useState<'risk' | 'count' | 'recent'>('risk');
   const [copiedFixId, setCopiedFixId] = useState<string | null>(null);
   const [filterTop5Only, setFilterTop5Only] = useState<boolean>(false);
-  const [graphViewMode, setGraphViewMode] = useState<'matrix' | 'bars'>('matrix');
-  const [hoveredNode, setHoveredNode] = useState<{ cluster: Cluster; x: number; y: number } | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'critical' | 'info' | 'success' } | null>(null);
   const [showLiveDrawer, setShowLiveDrawer] = useState<boolean>(false);
   const [liveStreamEvents, setLiveStreamEvents] = useState<any[]>([]);
@@ -132,7 +130,6 @@ export default function CrashMonitorView({
           top5HighRisks: [],
         } : null);
         setSelectedCluster(null);
-        setHoveredNode(null);
         setToast({ msg: 'All monitoring metrics returned to zero.', type: 'info' });
         setTimeout(() => setToast(null), 3000);
       }
@@ -253,61 +250,11 @@ export default function CrashMonitorView({
   const thresholdReached = (stats?.totalCrashes || 0) >= 500 || Boolean(stats?.thresholdReached);
   const displayClusters = filterTop5Only ? top5HighRisks : clusters;
 
-  // -------------------------------------------------------------
-  // GRAPH: Coordinate calculations for Clusters of Risk Topology
-  // -------------------------------------------------------------
-  const svgWidth = 880;
-  const svgHeight = 260;
-  const padLeft = 65;
-  const padRight = 35;
-  const padTop = 30;
-  const padBottom = 40;
-  const plotWidth = svgWidth - padLeft - padRight;
-  const plotHeight = svgHeight - padTop - padBottom;
-
-  // Max occurrence count for X scaling
-  const maxCount = Math.max(10, ...clusters.map((c) => c.count), 500);
-
-  // Map frequency to X position (power curve for clear spacing across low and high counts)
-  const getX = (count: number) => {
-    const minVal = 1;
-    const maxVal = Math.max(500, maxCount);
-    const norm = Math.pow(Math.max(1, count) / maxVal, 0.45);
-    return padLeft + norm * plotWidth;
-  };
-
-  // Map Risk Score (0-100) to Y position (higher risk = higher position)
-  const getY = (risk: number) => {
-    const clamped = Math.max(0, Math.min(100, risk));
-    return padTop + (1 - clamped / 100) * plotHeight;
-  };
-
-  // Node radius based on blast radius / count
-  const getRadius = (cluster: Cluster) => {
-    const sessions = cluster.affected_sessions?.length || 1;
-    const base = 16;
-    const extra = Math.min(18, Math.sqrt(cluster.count) * 1.4 + sessions * 2);
-    return Math.max(16, Math.min(34, base + extra));
-  };
-
   const getRiskColor = (score: number) => {
     if (score >= 80) return '#ef4444'; // Critical
     if (score >= 60) return '#f97316'; // High
     if (score >= 40) return '#eab308'; // Medium
     return '#3b82f6'; // Low
-  };
-
-  const getShortLabel = (cluster: Cluster) => {
-    const t = cluster.title || cluster.category;
-    if (t.includes('TypeError')) return 'TypeError';
-    if (t.includes('InputValidation')) return 'SQL Injection';
-    if (t.includes('DatabaseConnection') || t.includes('pool')) return 'DB Pool';
-    if (t.includes('StorageNotConfigured')) return 'Storage 503';
-    if (t.includes('GatewayTimeout') || t.includes('504')) return '504 Timeout';
-    if (t.includes('RateLimit') || t.includes('429')) return '429 RateLimit';
-    if (t.includes('OutOfMemory') || t.includes('heap')) return 'Fatal OOM';
-    if (t.includes('Unauthorized') || t.includes('JWT')) return 'JWT Forgery';
-    return cluster.category.split('/')[0];
   };
 
   return (
@@ -509,414 +456,43 @@ export default function CrashMonitorView({
         </div>
       </section>
 
-      {/* 4. GRAPH REPRESENTING CLUSTERS OF RISK */}
-      <section className="cm-risk-graph-card">
-        <div className="cm-graph-header">
-          <div>
-            <div className="cm-graph-title">
-              <Layers size={18} style={{ color: '#0f766e' }} />
-              <span>Clusters of Risk Topology</span>
-              {clusters.length > 0 && (
-                <span style={{ fontSize: '11px', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
-                  {clusters.length} Clusters Plotted
-                </span>
-              )}
-            </div>
-            <div className="cm-graph-subtitle">
-              Visual 2D scatter matrix mapping crash clusters by <b>Incident Frequency (X-axis)</b> vs. <b>Risk Severity Score (Y-axis)</b>.
-            </div>
+      {/* Clusters of Risk Bar Graph Banner (Links to Live Simulation) */}
+      {clusters.length > 0 && (
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: '12px',
+          padding: '12px 20px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: 'var(--cm-card-shadow)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#1e293b' }}>
+            <BarChart2 size={18} style={{ color: '#0f766e' }} />
+            <span><b>{clusters.length} Risk Clusters Active:</b> View the synthesized <b>Clusters of Risk Bar Graph</b> with severity breakdown in Live Simulation.</span>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-            {/* Risk Zone Legend */}
-            <div className="cm-graph-legend">
-              <span className="cm-legend-item">
-                <span className="cm-legend-dot" style={{ background: '#ef4444' }} />
-                <span>Critical (80-100)</span>
-              </span>
-              <span className="cm-legend-item">
-                <span className="cm-legend-dot" style={{ background: '#f97316' }} />
-                <span>High (60-79)</span>
-              </span>
-              <span className="cm-legend-item">
-                <span className="cm-legend-dot" style={{ background: '#eab308' }} />
-                <span>Medium (40-59)</span>
-              </span>
-              <span className="cm-legend-item">
-                <span className="cm-legend-dot" style={{ background: '#3b82f6' }} />
-                <span>Low (&lt;40)</span>
-              </span>
-            </div>
-
-            {/* View Mode Toggle */}
-            <div style={{ display: 'flex', background: '#f1f5f9', padding: '2px', borderRadius: '6px' }}>
-              <button
-                onClick={() => setGraphViewMode('matrix')}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  border: 0,
-                  background: graphViewMode === 'matrix' ? '#ffffff' : 'transparent',
-                  color: graphViewMode === 'matrix' ? '#0f172a' : '#64748b',
-                  boxShadow: graphViewMode === 'matrix' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                2D Matrix
-              </button>
-              <button
-                onClick={() => setGraphViewMode('bars')}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  border: 0,
-                  background: graphViewMode === 'bars' ? '#ffffff' : 'transparent',
-                  color: graphViewMode === 'bars' ? '#0f172a' : '#64748b',
-                  boxShadow: graphViewMode === 'bars' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                Category Risk
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={() => onOpenSimulation && onOpenSimulation()}
+            style={{
+              background: '#0f766e',
+              color: '#ffffff',
+              border: 0,
+              borderRadius: '6px',
+              padding: '6px 14px',
+              fontSize: '11px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            Open Risk Bar Graph →
+          </button>
         </div>
-
-        {/* 2D MATRIX VIEW */}
-        {graphViewMode === 'matrix' ? (
-          <div className="cm-graph-canvas-wrap">
-            <svg
-              viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-              style={{ width: '100%', height: 'auto', display: 'block' }}
-            >
-              <defs>
-                {/* Gradients for risk zones */}
-                <linearGradient id="critZone" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#fee2e2" stopOpacity="0.45" />
-                  <stop offset="100%" stopColor="#fee2e2" stopOpacity="0.1" />
-                </linearGradient>
-                <linearGradient id="highZone" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ffedd5" stopOpacity="0.35" />
-                  <stop offset="100%" stopColor="#ffedd5" stopOpacity="0.08" />
-                </linearGradient>
-              </defs>
-
-              {/* Shaded Risk Zones */}
-              <rect x={padLeft} y={getY(100)} width={plotWidth} height={getY(80) - getY(100)} fill="url(#critZone)" />
-              <rect x={padLeft} y={getY(80)} width={plotWidth} height={getY(60) - getY(80)} fill="url(#highZone)" />
-
-              {/* Horizontal Grid Lines & Y-Axis Labels */}
-              {[100, 80, 60, 40, 20, 0].map((score) => {
-                const yPos = getY(score);
-                const isMajor = score === 80 || score === 60 || score === 40;
-                return (
-                  <g key={score}>
-                    <line
-                      x1={padLeft}
-                      y1={yPos}
-                      x2={svgWidth - padRight}
-                      y2={yPos}
-                      stroke={score === 80 ? '#fca5a5' : score === 60 ? '#fdba74' : '#e2e8f0'}
-                      strokeDasharray={isMajor ? '4 3' : '2 4'}
-                      strokeWidth={score === 80 || score === 60 ? 1.2 : 0.8}
-                    />
-                    <text
-                      x={padLeft - 10}
-                      y={yPos + 3}
-                      textAnchor="end"
-                      fill={score >= 80 ? '#ef4444' : score >= 60 ? '#ea580c' : '#64748b'}
-                      fontSize="10"
-                      fontWeight={score >= 60 ? '700' : '500'}
-                      fontFamily="monospace"
-                    >
-                      {score}
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* X-Axis Horizontal Baseline */}
-              <line
-                x1={padLeft}
-                y1={svgHeight - padBottom}
-                x2={svgWidth - padRight}
-                y2={svgHeight - padBottom}
-                stroke="#94a3b8"
-                strokeWidth="1.2"
-              />
-
-              {/* X-Axis Ticks & Labels */}
-              {[1, 5, 25, 100, 250, 500].map((cnt) => {
-                const xPos = getX(cnt);
-                return (
-                  <g key={cnt}>
-                    <line
-                      x1={xPos}
-                      y1={svgHeight - padBottom}
-                      x2={xPos}
-                      y2={svgHeight - padBottom + 5}
-                      stroke="#94a3b8"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={xPos}
-                      y={svgHeight - padBottom + 18}
-                      textAnchor="middle"
-                      fill="#64748b"
-                      fontSize="10"
-                      fontFamily="monospace"
-                      fontWeight="600"
-                    >
-                      {cnt === 500 ? '500+ alerts' : cnt}
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Axis Titles */}
-              <text
-                x={padLeft + plotWidth / 2}
-                y={svgHeight - 6}
-                textAnchor="middle"
-                fill="#475569"
-                fontSize="11"
-                fontWeight="700"
-              >
-                Incident Occurrence Frequency (Count) →
-              </text>
-
-              <text
-                x={16}
-                y={padTop + plotHeight / 2}
-                textAnchor="middle"
-                fill="#475569"
-                fontSize="11"
-                fontWeight="700"
-                transform={`rotate(-90 16 ${padTop + plotHeight / 2})`}
-              >
-                Risk Score (0 - 100) ↑
-              </text>
-
-              {/* Empty state overlay inside graph if 0 clusters */}
-              {clusters.length === 0 && (
-                <g>
-                  <rect
-                    x={padLeft + 40}
-                    y={padTop + 40}
-                    width={plotWidth - 80}
-                    height={plotHeight - 80}
-                    rx="10"
-                    fill="#ffffff"
-                    stroke="#cbd5e1"
-                    strokeDasharray="4 4"
-                    opacity="0.9"
-                  />
-                  <text
-                    x={padLeft + plotWidth / 2}
-                    y={padTop + plotHeight / 2 - 8}
-                    textAnchor="middle"
-                    fill="#0f172a"
-                    fontSize="13"
-                    fontWeight="700"
-                  >
-                    Awaiting crash telemetry from CrashWeb
-                  </text>
-                  <text
-                    x={padLeft + plotWidth / 2}
-                    y={padTop + plotHeight / 2 + 14}
-                    textAnchor="middle"
-                    fill="#64748b"
-                    fontSize="11"
-                  >
-                    Trigger attacks or flood waves in CrashWeb to plot live risk cluster nodes across risk bands.
-                  </text>
-                </g>
-              )}
-
-              {/* PLOTTED CLUSTER NODES */}
-              {clusters.map((cluster) => {
-                const cx = getX(cluster.count);
-                const cy = getY(cluster.risk_score);
-                const r = getRadius(cluster);
-                const color = getRiskColor(cluster.risk_score);
-                const isTop5 = top5HighRisks.some((t) => t.id === cluster.id);
-                const rank = top5HighRisks.findIndex((t) => t.id === cluster.id) + 1;
-                const shortLabel = getShortLabel(cluster);
-
-                return (
-                  <g
-                    key={cluster.id}
-                    style={{ cursor: 'pointer', transition: 'transform 0.2s ease' }}
-                    onClick={() => setSelectedCluster(cluster)}
-                    onMouseEnter={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setHoveredNode({ cluster, x: cx, y: cy });
-                    }}
-                    onMouseLeave={() => setHoveredNode(null)}
-                  >
-                    {/* Glowing outer pulse ring for Top 5 / Critical */}
-                    {(isTop5 || cluster.risk_score >= 80) && (
-                      <circle
-                        cx={cx}
-                        cy={cy}
-                        r={r + 6}
-                        fill="none"
-                        stroke={color}
-                        strokeWidth="2"
-                        opacity="0.35"
-                      />
-                    )}
-
-                    {/* Main Node Bubble */}
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={r}
-                      fill={color}
-                      stroke="#ffffff"
-                      strokeWidth="2.5"
-                      style={{
-                        filter: isTop5 ? 'drop-shadow(0 4px 10px rgba(239, 68, 68, 0.4))' : 'drop-shadow(0 2px 5px rgba(0,0,0,0.15))',
-                      }}
-                    />
-
-                    {/* Rank Badge on Top of Node */}
-                    {isTop5 && (
-                      <g>
-                        <rect
-                          x={cx - 12}
-                          y={cy - r - 10}
-                          width="24"
-                          height="14"
-                          rx="4"
-                          fill="#0f172a"
-                          stroke="#ffffff"
-                          strokeWidth="1"
-                        />
-                        <text
-                          x={cx}
-                          y={cy - r}
-                          textAnchor="middle"
-                          fill="#fbbf24"
-                          fontSize="9"
-                          fontWeight="800"
-                          fontFamily="monospace"
-                        >
-                          #{rank}
-                        </text>
-                      </g>
-                    )}
-
-                    {/* Node Category / Abbreviation inside circle */}
-                    <text
-                      x={cx}
-                      y={cy + 3}
-                      textAnchor="middle"
-                      fill="#ffffff"
-                      fontSize={r > 24 ? "10" : "8"}
-                      fontWeight="800"
-                      fontFamily="'DM Sans', sans-serif"
-                    >
-                      {shortLabel.slice(0, 8)}
-                    </text>
-
-                    {/* Occurrence count pill under the circle */}
-                    <text
-                      x={cx}
-                      y={cy + r + 13}
-                      textAnchor="middle"
-                      fill="#1e293b"
-                      fontSize="9"
-                      fontWeight="700"
-                      fontFamily="monospace"
-                    >
-                      {cluster.count}x
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-
-            {/* Interactive Tooltip on Node Hover */}
-            {hoveredNode && (
-              <div
-                className="cm-graph-tooltip"
-                style={{
-                  left: `${(hoveredNode.x / svgWidth) * 100}%`,
-                  top: `${(hoveredNode.y / svgHeight) * 100}%`,
-                }}
-              >
-                <h5>{hoveredNode.cluster.title}</h5>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ background: `${getRiskColor(hoveredNode.cluster.risk_score)}33`, color: getRiskColor(hoveredNode.cluster.risk_score), padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '10px' }}>
-                    {hoveredNode.cluster.risk_level} · {hoveredNode.cluster.risk_score}/100
-                  </span>
-                  <span style={{ color: '#94a3b8', fontSize: '10px' }}>
-                    {hoveredNode.cluster.category}
-                  </span>
-                </div>
-                <div style={{ color: '#cbd5e1', fontSize: '10px', marginBottom: '6px' }}>
-                  <b>{hoveredNode.cluster.count}</b> occurrences across <b>{hoveredNode.cluster.affected_sessions?.length || 1}</b> sessions
-                </div>
-                {hoveredNode.cluster.plain_explanation && (
-                  <div style={{ color: '#fca5a5', fontSize: '10px', fontStyle: 'italic', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '4px' }}>
-                    {hoveredNode.cluster.plain_explanation.slice(0, 110)}...
-                  </div>
-                )}
-                <div style={{ marginTop: '6px', color: '#38bdf8', fontSize: '9px', fontWeight: 700 }}>
-                  Click node to inspect recommended fix →
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* CATEGORY RISK DISTRIBUTION VIEW */
-          <div style={{ padding: '10px 0' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
-              {Object.entries(stats?.categoryDistribution || {}).map(([cat, count]) => {
-                const catClusters = clusters.filter((c) => c.category === cat);
-                const avgRisk = catClusters.length > 0
-                  ? Math.round(catClusters.reduce((a, b) => a + b.risk_score, 0) / catClusters.length)
-                  : 0;
-                const riskColor = getRiskColor(avgRisk);
-
-                return (
-                  <div
-                    key={cat}
-                    style={{
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '10px',
-                      padding: '14px',
-                      background: '#fafbfc'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a' }}>{cat}</span>
-                      <span style={{ background: `${riskColor}18`, color: riskColor, padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
-                        Risk {avgRisk}/100
-                      </span>
-                    </div>
-
-                    {/* Progress track */}
-                    <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden', marginBottom: '8px' }}>
-                      <div style={{ width: `${avgRisk}%`, height: '100%', background: riskColor, borderRadius: '3px' }} />
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b' }}>
-                      <span><b>{count}</b> incidents</span>
-                      <span><b>{catClusters.length}</b> active clusters</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </section>
+      )}
 
       {/* 5. 500+ THRESHOLD ALERT & TOP 5 TRIAGED RISKS SECTION */}
       {thresholdReached && top5HighRisks.length > 0 && (

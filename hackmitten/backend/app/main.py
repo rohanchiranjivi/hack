@@ -462,9 +462,10 @@ def register_project(body: ProjectRegistration):
     return {"ok": True, "projectId": body.projectId, "apiKey": api_key}
 
 @app.post("/api/seed-crashes")
-def trigger_seed_demo_data(projectId: str = "proj_crashweb_01"):
-    seed_demo_data(projectId)
-    return {"ok": True, "message": "Demo crash data seeded successfully."}
+def trigger_seed_demo_data(projectId: str = "proj_crashweb_01", flood: str = "false"):
+    is_flood = str(flood).lower() in ("true", "1", "yes")
+    seed_demo_data(projectId, multiplier=3 if is_flood else 1)
+    return {"ok": True, "message": "Demo crash data seeded successfully.", "flood": is_flood}
 
 # ==========================================
 # Original SignalDesk Endpoints Preserved
