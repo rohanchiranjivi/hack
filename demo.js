@@ -23,22 +23,27 @@ if (!fs.existsSync(pythonCmd)) {
   pythonCmd = isWin ? 'python' : 'python3';
 }
 
-const npmCmd = isWin ? 'npm.cmd' : 'npm';
-
 console.log('\x1b[36m%s\x1b[0m', '===============================================================');
 console.log('\x1b[1m\x1b[33m   LAUNCHING CRASH MONITORING END-TO-END DEMO ECOSYSTEM        \x1b[0m');
 console.log('\x1b[36m%s\x1b[0m', '===============================================================');
-console.log('  1. Monitoring Backend       : \x1b[32mhttp://localhost:8000\x1b[0m (Values reset to 0 on startup/refresh)');
-console.log('  2. Monitoring Dashboard     : \x1b[32mhttp://localhost:5173\x1b[0m (Real-time SSE + 500-Crash Triage Mode)');
-console.log('  3. Monitored Victim Website : \x1b[36mhttps://crashweb-gules.vercel.app/\x1b[0m (Separate Vercel deployment)');
-console.log('  4. Crash Control Server     : \x1b[35mhttp://localhost:3000\x1b[0m (Dedicated Chaos Attack Center)');
+console.log('  1. Monitoring Backend       : \x1b[32mhttp://localhost:8000\x1b[0m (Auto zero-reset on startup)');
+console.log('  2. Monitoring Dashboard     : \x1b[32mhttp://localhost:5173\x1b[0m (Real-Time Observability + 500 Triage)');
+console.log('  3. Monitored Victim Store   : \x1b[36mhttp://localhost:3000\x1b[0m & \x1b[36mhttps://crashweb-gules.vercel.app/\x1b[0m (Victim Page)');
+console.log('  4. Crash Control Attack Hub : \x1b[35mhttp://localhost:3000/chaos\x1b[0m (Dedicated Chaos Attack Center)');
 console.log('\x1b[90mPress Ctrl+C to terminate all services.\x1b[0m\n');
 
 const processes = [];
 
 function startProcess(name, cmd, args, cwd, color) {
   const env = { ...process.env, PYTHONPATH: backendDir };
-  const proc = spawn(cmd, args, { cwd, env, shell: true });
+
+  const proc = isWin && (cmd.endsWith('.cmd') || cmd.toLowerCase() === 'npm')
+    ? spawn('cmd.exe', ['/c', cmd, ...args], { cwd, env })
+    : spawn(cmd, args, { cwd, env });
+
+  proc.on('error', (err) => {
+    console.error(`\x1b[31m[${name}] Failed to start: ${err.message}\x1b[0m`);
+  });
 
   proc.stdout.on('data', (data) => {
     const lines = data.toString().trim().split('\n');
@@ -62,6 +67,10 @@ function startProcess(name, cmd, args, cwd, color) {
     console.log(`${color}[${name}] exited with code ${code}\x1b[0m`);
   });
 
+  proc.on('error', (err) => {
+    console.error(`${color}[${name}] error: ${err.message}\x1b[0m`);
+  });
+
   processes.push(proc);
   return proc;
 }
@@ -79,7 +88,7 @@ startProcess(
 setTimeout(() => {
   startProcess(
     'DASHBOARD',
-    npmCmd,
+    'npm',
     ['run', 'dev', '--', '--port', '5173'],
     frontendDir,
     '\x1b[35m'
@@ -90,7 +99,7 @@ setTimeout(() => {
 setTimeout(() => {
   startProcess(
     'CRASHWEB ',
-    npmCmd,
+    'npm',
     ['run', 'dev', '--', '--port', '3000'],
     crashwebDir,
     '\x1b[32m'
@@ -115,4 +124,3 @@ function cleanup() {
 
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
-

@@ -33,62 +33,73 @@ RE_WEBPACK_HASH = re.compile(r'\.[a-f0-9]{8,20}\.')
 
 def categorize_crash(error_type: str, message: str, http_status: Optional[int] = None, stack_trace: str = "") -> CrashCategory:
     combined = f"{error_type} {message} {stack_trace}".lower()
+    et_lower = (error_type or "").strip().lower()
 
-    # 1. Database
-    if any(k in combined for k in [
-        'database', 'db_pool', 'pool exhausted', 'poollimit', 'pg-pool', 'deadlock',
-        'connection pool', 'sql', 'transaction deadlock', 'redis'
-    ]):
-        return "Database"
-
-    # 2. Memory
-    if any(k in combined for k in [
-        'outofmemory', 'heap out of memory', 'memory leak', 'memory pressure',
-        'heap limit', 'buffer allocation failed', 'memoryleak'
-    ]):
-        return "Memory"
-
-    # 3. Resource Loading
-    if 'resourceloaderror' in combined or any(k in combined for k in [
-        'failed to load resource', '<img', '<script', '404_echo', 'nav-sprite'
-    ]):
-        return "Resource Loading"
-
-    # 4. Timeout / Performance
-    if any(k in combined for k in [
-        'timeout', 'gateway timeout', 'timed out', 'latency', 'slow endpoint', '504'
-    ]) or http_status == 504:
-        return "Timeout/Performance"
-
-    # 5. Auth / Permissions
-    if any(k in combined for k in [
-        'autherror', 'unauthorized', 'forbidden', 'session token', 'invalid credentials',
-        'account_exists', 'auth_required'
-    ]) or http_status in (401, 403):
-        return "Auth/Permissions"
-
-    # 6. Validation / Input
-    if any(k in combined for k in [
-        'badrequest', 'syntaxerror', 'json.parse', 'malformed', 'invalid json',
-        'validation', 'invalid_name', 'invalid_email'
-    ]) or http_status == 400:
-        return "Validation/Input"
-
-    # 7. JavaScript Runtime
-    if any(k in combined for k in [
-        'typeerror', 'referenceerror', 'uncaughtexception', 'unhandledrejection',
-        'cannot read properties of', 'null dereference', 'reactrendererror',
-        'invariant violation', 'undefined'
+    # 1. JavaScript Runtime (Check FIRST so TypeErrors/hydrations never get swallowed by HTTP 403 or DB keywords)
+    if any(k in et_lower for k in ['typeerror', 'referenceerror', 'rangeerror', 'evalerror', 'urierror', 'reactrendererror', 'invariant']) or any(k in combined for k in [
+        'cannot read properties of', 'is not a function', 'undefined (reading',
+        'null dereference', 'reactrendererror', 'invariant violation', 'hydration render'
     ]):
         return "JavaScript Runtime"
 
-    # 8. Network / HTTP
-    if http_status is not None and http_status >= 400:
-        return "Network/HTTP"
-    if any(k in combined for k in [
-        'networkerror', 'xhrerror', 'bad gateway', '502', '500', 'cors',
-        'fetch failed', 'failed to fetch', 'connection reset', 'rate limit', '429'
+    # 2. Validation / Input (Check BEFORE Database so SQL injection probes are categorized as Validation/Input, not DB)
+    if any(k in et_lower for k in ['inputvalidation', 'validationerror', 'badrequest', 'syntaxerror', 'invalidinput']) or any(k in combined for k in [
+        'malicious sql injection probe', 'sql injection probe', 'xss injection probe',
+        'inputvalidationexception', 'invalid query parameter', 'malformed query',
+        'malformed json', 'invalid json', 'badrequest'
+    ]) or (http_status == 400 and 'sql injection' in combined):
+        return "Validation/Input"
+
+    # 3. Database
+    if any(k in et_lower for k in ['databaseconnection', 'storagenotconfigured', 'poollimit', 'postgres', 'redis', 'deadlock']) or any(k in combined for k in [
+        'persistent storage is not configured', 'upstash redis', 'databaseconnectiontimeout',
+        'connection pool exhausted', 'poollimit', 'pg-pool', 'transaction deadlock',
+        'db_pool', 'pool exhausted', 'database connection'
     ]):
+        return "Database"
+
+    # 4. Timeout / Performance
+    if any(k in et_lower for k in ['gatewaytimeout', 'timeouterror', 'deadlineexceeded']) or any(k in combined for k in [
+        '504 gateway timeout', 'gateway timeout', 'upstream catalog service failed to respond',
+        'sla window', 'sla exceeded', 'request timeout', 'timed out'
+    ]) or http_status == 504:
+        return "Timeout/Performance"
+
+    # 5. Memory
+    if any(k in et_lower for k in ['outofmemory', 'heaplimit', 'memoryleak']) or any(k in combined for k in [
+        'heap allocation failed', 'fatal javascript out of memory', 'heap out of memory',
+        'memory leak', 'heap limit reached', 'buffer allocation failed', 'array buffer allocation failed'
+    ]):
+        return "Memory"
+
+    # 6. Auth / Permissions
+    if any(k in et_lower for k in ['unauthorizedaccess', 'authtokenforged', 'autherror', 'jsonwebtokenerror', 'forbidden']) or any(k in combined for k in [
+        'authtokenforgederror', 'invalid signature', 'tampered header', 'session token',
+        'invalid credentials', 'auth_required', 'unauthorized', 'forbidden'
+    ]):
+        return "Auth/Permissions"
+
+    # 7. Resource Loading
+    if 'resourceloaderror' in et_lower or any(k in combined for k in [
+        'resourceloaderror', 'failed to load resource', '<img', '<script', '404_echo', 'nav-sprite'
+    ]):
+        return "Resource Loading"
+
+    # 8. Network / HTTP
+    if any(k in et_lower for k in ['ratelimit', 'badgateway', 'networkerror', 'httperror']) or any(k in combined for k in [
+        'rate limit exceeded', 'too many requests', '429 too many requests', '502 bad gateway',
+        'networkerror', 'xhrerror', 'bad gateway', 'fetch failed', 'failed to fetch'
+    ]) or http_status == 429:
+        return "Network/HTTP"
+
+    # 9. Fallbacks based on explicit HTTP status codes (ONLY when error_type did not match above)
+    if http_status == 400:
+        return "Validation/Input"
+    if http_status in (401, 403):
+        return "Auth/Permissions"
+    if http_status == 503:
+        return "Database"
+    if http_status is not None and http_status >= 500:
         return "Network/HTTP"
 
     return "Unknown"

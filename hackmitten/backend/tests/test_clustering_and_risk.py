@@ -15,6 +15,12 @@ from app.engine.risk_scoring import calculate_risk
 def test_categorize_crash():
     assert categorize_crash("DatabaseConnectionError", "Connection pool exhausted (0/50)") == "Database"
     assert categorize_crash("TypeError", "Cannot read properties of undefined") == "JavaScript Runtime"
+    # Even if HTTP status 403 is received from proxy, TypeError must stay JavaScript Runtime
+    assert categorize_crash("TypeError", "Cannot read properties of undefined (reading 'price') in ZonProductGrid hydration render.", http_status=403) == "JavaScript Runtime"
+    # SQL injection probe must be categorized as Validation/Input, NOT Database
+    assert categorize_crash("InputValidationException", "Malicious SQL injection probe pattern detected in query parameter: \"' OR 1=1 --\"", http_status=400) == "Validation/Input"
+    assert categorize_crash("StorageNotConfiguredError", "HTTP 503: Persistent storage is not configured. Add the Upstash Redis environment variables in Vercel.", http_status=503) == "Database"
+    assert categorize_crash("UnauthorizedAccess", "AuthTokenForgedError: Invalid signature or tampered header detected on user session token.", http_status=401) == "Auth/Permissions"
     assert categorize_crash("OutOfMemoryError", "JavaScript heap out of memory") == "Memory"
     assert categorize_crash("GatewayTimeout", "Upstream timeout 504", http_status=504) == "Timeout/Performance"
     assert categorize_crash("ResourceLoadError", "Failed to load resource: <img>") == "Resource Loading"

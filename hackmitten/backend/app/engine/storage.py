@@ -310,6 +310,8 @@ def upsert_cluster(c: dict):
             sample_stack_trace, sample_message, status, is_spike, plain_explanation, suggested_fix
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(fingerprint) DO UPDATE SET
+            title = excluded.title,
+            category = excluded.category,
             count = excluded.count,
             risk_score = excluded.risk_score,
             risk_level = excluded.risk_level,

@@ -165,13 +165,19 @@ export default function ChaosControlPanel() {
       <header className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-8 border-b border-slate-800">
         <div>
           <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-lg bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 hover:text-white hover:bg-emerald-900 transition"
+            >
+              🛒 Open Monitored Victim Storefront
+            </Link>
             <a
               href="https://crashweb-gules.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-lg bg-indigo-950/80 border border-indigo-700/60 text-indigo-300 hover:text-white hover:bg-indigo-900 transition"
             >
-              Victim Storefront: https://crashweb-gules.vercel.app/
+              Victim Storefront (Vercel)
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-mono font-bold">

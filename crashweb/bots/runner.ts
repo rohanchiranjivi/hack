@@ -239,7 +239,7 @@ export class BotInstance {
           message: scenarioObj.message,
           stackTrace: scenarioObj.stack,
           url: `${base}${scenarioObj.endpoint}`,
-          httpStatus: victimStatus >= 400 ? victimStatus : scenarioObj.httpStatus,
+          httpStatus: scenarioObj.httpStatus,
           botId: this.id,
           sessionId: this.botSessionId,
           severityHint: scenarioObj.riskHint as any,
