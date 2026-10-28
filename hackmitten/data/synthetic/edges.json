@@ -1,0 +1,632 @@
+[
+  {
+    "upstream": "gateway",
+    "downstream": "svc-00",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-00",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-01",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-01",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-02",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-02",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-03",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-03",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-04",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-04",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-05",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-05",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-06",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-06",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-07",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-07",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-08",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-08",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-09",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-09",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-10",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-10",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-11",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-11",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-12",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-12",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-13",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-13",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-14",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-14",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-15",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-15",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-16",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-16",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-17",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-17",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-18",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-18",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "gateway",
+    "downstream": "svc-19",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-19",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-19",
+    "downstream": "svc-20",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-20",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-00",
+    "downstream": "svc-21",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-21",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-01",
+    "downstream": "svc-22",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-22",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-02",
+    "downstream": "svc-23",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-23",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-03",
+    "downstream": "svc-24",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-24",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-04",
+    "downstream": "svc-25",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-25",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-05",
+    "downstream": "svc-26",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-26",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-06",
+    "downstream": "svc-27",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-27",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-07",
+    "downstream": "svc-28",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-28",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-08",
+    "downstream": "svc-29",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-29",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-09",
+    "downstream": "svc-30",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-30",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-10",
+    "downstream": "svc-31",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-31",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-11",
+    "downstream": "svc-32",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-32",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-12",
+    "downstream": "svc-33",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-33",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-13",
+    "downstream": "svc-34",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-34",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-14",
+    "downstream": "svc-35",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-35",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-15",
+    "downstream": "svc-36",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-36",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-16",
+    "downstream": "svc-37",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-37",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-17",
+    "downstream": "svc-38",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-38",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-18",
+    "downstream": "svc-39",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-39",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-19",
+    "downstream": "svc-40",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-40",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-00",
+    "downstream": "svc-41",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-41",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-01",
+    "downstream": "svc-42",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-42",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-02",
+    "downstream": "svc-43",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-43",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-03",
+    "downstream": "svc-44",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-44",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-04",
+    "downstream": "svc-45",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-45",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-05",
+    "downstream": "svc-46",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-46",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-06",
+    "downstream": "svc-47",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-47",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-07",
+    "downstream": "svc-48",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "cache-main",
+    "downstream": "svc-48",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-08",
+    "downstream": "svc-49",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-49",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-09",
+    "downstream": "svc-50",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-50",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-10",
+    "downstream": "svc-51",
+    "edge_type": "calls",
+    "weight": 1.0
+  },
+  {
+    "upstream": "db-primary",
+    "downstream": "svc-51",
+    "edge_type": "depends_on",
+    "weight": 0.9
+  },
+  {
+    "upstream": "svc-51",
+    "downstream": "queue-main",
+    "edge_type": "depends_on",
+    "weight": 0.8
+  }
+]

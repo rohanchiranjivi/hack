@@ -1,0 +1,16 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports: ["8000:8000"]
+    environment:
+      REDACTION_SALT: signaldesk-demo-session
+    volumes:
+      - ./data:/workspace/data
+      - ./reports:/workspace/reports
+  web:
+    build: ./frontend
+    ports: ["5173:80"]
+    depends_on: [api]

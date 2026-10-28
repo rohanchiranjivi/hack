@@ -1,0 +1,422 @@
+[
+  {
+    "name": "db-primary",
+    "kind": "db",
+    "tier": 0,
+    "team": "data"
+  },
+  {
+    "name": "cache-main",
+    "kind": "cache",
+    "tier": 1,
+    "team": "platform"
+  },
+  {
+    "name": "queue-main",
+    "kind": "queue",
+    "tier": 1,
+    "team": "platform"
+  },
+  {
+    "name": "gateway",
+    "kind": "gateway",
+    "tier": 0,
+    "team": "edge"
+  },
+  {
+    "name": "svc-00",
+    "kind": "app",
+    "tier": 1,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-01",
+    "kind": "app",
+    "tier": 2,
+    "team": "identity"
+  },
+  {
+    "name": "svc-02",
+    "kind": "app",
+    "tier": 3,
+    "team": "platform"
+  },
+  {
+    "name": "svc-03",
+    "kind": "app",
+    "tier": 1,
+    "team": "data"
+  },
+  {
+    "name": "svc-04",
+    "kind": "app",
+    "tier": 2,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-05",
+    "kind": "app",
+    "tier": 3,
+    "team": "identity"
+  },
+  {
+    "name": "svc-06",
+    "kind": "app",
+    "tier": 1,
+    "team": "platform"
+  },
+  {
+    "name": "svc-07",
+    "kind": "app",
+    "tier": 2,
+    "team": "data"
+  },
+  {
+    "name": "svc-08",
+    "kind": "app",
+    "tier": 3,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-09",
+    "kind": "app",
+    "tier": 1,
+    "team": "identity"
+  },
+  {
+    "name": "svc-10",
+    "kind": "app",
+    "tier": 2,
+    "team": "platform"
+  },
+  {
+    "name": "svc-11",
+    "kind": "app",
+    "tier": 3,
+    "team": "data"
+  },
+  {
+    "name": "svc-12",
+    "kind": "app",
+    "tier": 1,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-13",
+    "kind": "app",
+    "tier": 2,
+    "team": "identity"
+  },
+  {
+    "name": "svc-14",
+    "kind": "app",
+    "tier": 3,
+    "team": "platform"
+  },
+  {
+    "name": "svc-15",
+    "kind": "app",
+    "tier": 1,
+    "team": "data"
+  },
+  {
+    "name": "svc-16",
+    "kind": "app",
+    "tier": 2,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-17",
+    "kind": "app",
+    "tier": 3,
+    "team": "identity"
+  },
+  {
+    "name": "svc-18",
+    "kind": "app",
+    "tier": 1,
+    "team": "platform"
+  },
+  {
+    "name": "svc-19",
+    "kind": "app",
+    "tier": 2,
+    "team": "data"
+  },
+  {
+    "name": "svc-20",
+    "kind": "app",
+    "tier": 3,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-21",
+    "kind": "app",
+    "tier": 1,
+    "team": "identity"
+  },
+  {
+    "name": "svc-22",
+    "kind": "app",
+    "tier": 2,
+    "team": "platform"
+  },
+  {
+    "name": "svc-23",
+    "kind": "app",
+    "tier": 3,
+    "team": "data"
+  },
+  {
+    "name": "svc-24",
+    "kind": "app",
+    "tier": 1,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-25",
+    "kind": "app",
+    "tier": 2,
+    "team": "identity"
+  },
+  {
+    "name": "svc-26",
+    "kind": "app",
+    "tier": 3,
+    "team": "platform"
+  },
+  {
+    "name": "svc-27",
+    "kind": "app",
+    "tier": 1,
+    "team": "data"
+  },
+  {
+    "name": "svc-28",
+    "kind": "app",
+    "tier": 2,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-29",
+    "kind": "app",
+    "tier": 3,
+    "team": "identity"
+  },
+  {
+    "name": "svc-30",
+    "kind": "app",
+    "tier": 1,
+    "team": "platform"
+  },
+  {
+    "name": "svc-31",
+    "kind": "app",
+    "tier": 2,
+    "team": "data"
+  },
+  {
+    "name": "svc-32",
+    "kind": "app",
+    "tier": 3,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-33",
+    "kind": "app",
+    "tier": 1,
+    "team": "identity"
+  },
+  {
+    "name": "svc-34",
+    "kind": "app",
+    "tier": 2,
+    "team": "platform"
+  },
+  {
+    "name": "svc-35",
+    "kind": "app",
+    "tier": 3,
+    "team": "data"
+  },
+  {
+    "name": "svc-36",
+    "kind": "app",
+    "tier": 1,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-37",
+    "kind": "app",
+    "tier": 2,
+    "team": "identity"
+  },
+  {
+    "name": "svc-38",
+    "kind": "app",
+    "tier": 3,
+    "team": "platform"
+  },
+  {
+    "name": "svc-39",
+    "kind": "app",
+    "tier": 1,
+    "team": "data"
+  },
+  {
+    "name": "svc-40",
+    "kind": "app",
+    "tier": 2,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-41",
+    "kind": "app",
+    "tier": 3,
+    "team": "identity"
+  },
+  {
+    "name": "svc-42",
+    "kind": "app",
+    "tier": 1,
+    "team": "platform"
+  },
+  {
+    "name": "svc-43",
+    "kind": "app",
+    "tier": 2,
+    "team": "data"
+  },
+  {
+    "name": "svc-44",
+    "kind": "app",
+    "tier": 3,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-45",
+    "kind": "app",
+    "tier": 1,
+    "team": "identity"
+  },
+  {
+    "name": "svc-46",
+    "kind": "app",
+    "tier": 2,
+    "team": "platform"
+  },
+  {
+    "name": "svc-47",
+    "kind": "app",
+    "tier": 3,
+    "team": "data"
+  },
+  {
+    "name": "svc-48",
+    "kind": "app",
+    "tier": 1,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-49",
+    "kind": "app",
+    "tier": 2,
+    "team": "identity"
+  },
+  {
+    "name": "svc-50",
+    "kind": "app",
+    "tier": 3,
+    "team": "platform"
+  },
+  {
+    "name": "svc-51",
+    "kind": "app",
+    "tier": 1,
+    "team": "data"
+  },
+  {
+    "name": "svc-52",
+    "kind": "infra",
+    "tier": 2,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-53",
+    "kind": "infra",
+    "tier": 3,
+    "team": "identity"
+  },
+  {
+    "name": "svc-54",
+    "kind": "infra",
+    "tier": 1,
+    "team": "platform"
+  },
+  {
+    "name": "svc-55",
+    "kind": "infra",
+    "tier": 2,
+    "team": "data"
+  },
+  {
+    "name": "svc-56",
+    "kind": "infra",
+    "tier": 3,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-57",
+    "kind": "infra",
+    "tier": 1,
+    "team": "identity"
+  },
+  {
+    "name": "svc-58",
+    "kind": "infra",
+    "tier": 2,
+    "team": "platform"
+  },
+  {
+    "name": "svc-59",
+    "kind": "infra",
+    "tier": 3,
+    "team": "data"
+  },
+  {
+    "name": "svc-60",
+    "kind": "infra",
+    "tier": 1,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-61",
+    "kind": "infra",
+    "tier": 2,
+    "team": "identity"
+  },
+  {
+    "name": "svc-62",
+    "kind": "infra",
+    "tier": 3,
+    "team": "platform"
+  },
+  {
+    "name": "svc-63",
+    "kind": "infra",
+    "tier": 1,
+    "team": "data"
+  },
+  {
+    "name": "svc-64",
+    "kind": "infra",
+    "tier": 2,
+    "team": "commerce"
+  },
+  {
+    "name": "svc-65",
+    "kind": "infra",
+    "tier": 3,
+    "team": "identity"
+  }
+]

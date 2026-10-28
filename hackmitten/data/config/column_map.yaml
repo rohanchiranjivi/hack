@@ -1,0 +1,8 @@
+alert_id: [alert_id, id]
+ts: [timestamp, ts, time, created_at]
+source: [source, tool]
+service: [service, service_name]
+severity: [severity, level]
+alert_type: [alert_type, check_name, metric]
+message: [message, description, text]
+incident_id: [incident_id, incident]

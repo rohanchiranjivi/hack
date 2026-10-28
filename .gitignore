@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+*/node_modules/
+*/*/node_modules/
+
+# Next.js build output
+.next/
+*/.next/
+out/
+*/out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Vite / Frontend build output
+dist/
+*/dist/
+*/*/dist/
+
+# Python virtual environment & cache
+.venv/
+*/.venv/
+*/*/.venv/
+venv/
+*/venv/
+*/*/__pycache__/
+*/__pycache__/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Databases & local state
+*.db
+*.sqlite
+*.sqlite3
+backend/data/*.db
+hackmitten/backend/data/*.db
+signaldesk.sqlite3
+hackmitten/signaldesk.sqlite3
+
+# Environment files with secrets
+.env.local
+*.env.local
+crashweb/.env.local
+
+# Backups
+*.bak
+_git_backup_*
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

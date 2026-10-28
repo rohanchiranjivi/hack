@@ -1,0 +1,19 @@
+{
+  "raw_alerts": 23793,
+  "situations": 16610,
+  "notification_reduction_pct": 30.19,
+  "incident_recall": 1.0,
+  "incidents_total": 21,
+  "incidents_surfaced": 21,
+  "pairwise_precision": 1.0,
+  "pairwise_recall": 0.885,
+  "pairwise_f1": 0.939,
+  "false_hide_count": 0,
+  "explainability_coverage_pct": 100.0,
+  "note": "Grouping metrics use incident-linked alerts only; reduction counts all visible situations. This synthetic replay is not production evidence.",
+  "temporal_split": "No learned model is fit. Metrics are computed over the complete generated replay; a proper train/test backtest remains future work.",
+  "root_cause_top1_accuracy": "not computed by current heuristic baseline",
+  "b_cubed_ari": "not implemented in prototype",
+  "time_to_surface": "not computed; all displayed recall counts are replay end-state",
+  "robustness": "not run in prototype"
+}

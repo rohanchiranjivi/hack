@@ -1,0 +1,41 @@
+services:
+  monitoring-backend:
+    build:
+      context: ./hackmitten
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - REDACTION_SALT=signaldesk-demo-session
+    volumes:
+      - ./hackmitten/backend/data:/workspace/data
+
+  monitoring-dashboard:
+    build:
+      context: ./hackmitten/frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - monitoring-backend
+
+  crashweb:
+    build:
+      context: ./crashweb
+      dockerfile_inline: |
+        FROM node:20-alpine
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm install
+        COPY . .
+        RUN npm run build
+        EXPOSE 3000
+        CMD ["npm", "run", "start"]
+    ports:
+      - "3000:3000"
+    environment:
+      - MONITORING_SERVER_URL=http://monitoring-backend:8000
+      - NEXT_PUBLIC_MONITORING_SERVER_URL=http://localhost:8000
+      - ENABLE_CHAOS=true
+    depends_on:
+      - monitoring-backend
+

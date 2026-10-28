@@ -1,0 +1,14 @@
+candidate_window_sec: 900
+attach_threshold: 0.55
+merge_threshold: 0.70
+quiet_close_sec: 1200
+dedup_window_sec: 120
+early_promote:
+  min_alerts: 4
+  min_services: 3
+  window_min: 5
+noise_min_firings: 20
+noise_min_days: 7
+protect_if_ever_precursor: true
+novelty_policy: review
+redaction_default: true
