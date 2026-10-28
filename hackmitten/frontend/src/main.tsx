@@ -151,7 +151,7 @@ const DEMO_RECS: Rec[] = [
 
 function App() {
   const [page, setPage] = useState('Crash Monitor');
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [recs, setRecs] = useState<Rec[]>([]);
@@ -349,6 +349,7 @@ function App() {
           <CrashMonitorView
             darkMode={darkMode}
             toggleDarkMode={() => setDarkMode(!darkMode)}
+            onOpenSimulation={() => setPage('Live simulation')}
           />
         )}
 
